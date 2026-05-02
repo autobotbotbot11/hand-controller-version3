@@ -65,7 +65,7 @@ python -m hand_controller --ui-live --tuning .\tuning.testing.json
 - double click: two quick left-click pinches
 - drag: hold the left pinch
 - ML `hold`: clutch/freeze; hold closed fist to freeze, reposition your hand, then release to keep the cursor in place with a temporary offset
-- reset direct mapping: thumb + pinky pinch; clears the temporary offset so the cursor returns to the actual thumb-index midpoint
+- reset cursor: thumb + pinky pinch; ibabalik ang cursor sa current hand position
 - ML `toggle`: on/off ng control without stopping recognition
 - ML `undo`: `Ctrl+Z`
 - ML `redo`: `Ctrl+Y`

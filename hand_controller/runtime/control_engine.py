@@ -32,6 +32,8 @@ from ..vision.models import SelectedHands, VisionResult
 THUMB_TIP_IDX = 4
 INDEX_TIP_IDX = 8
 MAPPING_RESET_COOLDOWN_SECONDS = 0.4
+MAPPING_RESET_FEEDBACK = "Cursor Reset"
+CLUTCH_REPOSITION_HINT = "Thumb + pinky: reset cursor"
 
 
 def _mouse_pointer_norm(hand) -> tuple[float, float]:
@@ -341,7 +343,7 @@ class LiveControlEngine:
             now=now,
         )
         if reset_mapping:
-            self._set_gesture_feedback("Direct Mapping", now)
+            self._set_gesture_feedback(MAPPING_RESET_FEEDBACK, now)
 
         click_enabled = (
             self.runtime_state.control_enabled
@@ -384,6 +386,8 @@ class LiveControlEngine:
         feedback_actions.extend(mouse_actions)
         movement_status = f"keyboard overlay | {mouse_status}" if keyboard_visible else mouse_status
         click_feedback_status = mouse_status
+        if "hand repositioned" in mouse_status:
+            self._set_gesture_feedback(CLUTCH_REPOSITION_HINT, now)
         click_freeze = click_enabled and (
             click_state.right_pressed
             or (click_state.left_pressed and not self.mouse_controller.state.drag_active)

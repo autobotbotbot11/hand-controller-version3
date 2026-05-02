@@ -150,27 +150,30 @@ class MouseController:
         self._set_stationary_cursor_state(lock_x, lock_y, now)
         return MoveTo(lock_x, lock_y) if emit_move else None
 
-    def _commit_clutch_offset(self, pointer_norm: tuple[float, float], now: float) -> None:
+    def _commit_clutch_offset(self, pointer_norm: tuple[float, float], now: float) -> bool:
         if not self.state.clutch_active:
-            return
+            return False
 
         if self.state.clutch_lock_x is None or self.state.clutch_lock_y is None:
             self._clear_clutch_lock()
-            return
+            return False
 
         lock_x, lock_y = self._clamp_screen_point(self.state.clutch_lock_x, self.state.clutch_lock_y)
         raw_x, raw_y = self._screen_target(pointer_norm)
         offset_x = float(lock_x - raw_x)
         offset_y = float(lock_y - raw_y)
+        offset_applied = False
         min_offset = max(8.0, self.motion_settings.wake_threshold_px * 2.0)
         if math.hypot(offset_x, offset_y) < min_offset:
             self._clear_mapping_offset()
         else:
             self.state.mapping_offset_x = offset_x
             self.state.mapping_offset_y = offset_y
+            offset_applied = True
 
         self._set_stationary_cursor_state(lock_x, lock_y, now)
         self._clear_clutch_lock()
+        return offset_applied
 
     def _ensure_aim_lock(self, pointer_norm: tuple[float, float], now: float) -> MoveTo | None:
         emit_move = False
@@ -344,7 +347,7 @@ class MouseController:
 
         if reset_mapping:
             actions.append(self._reset_mapping_to_direct(pointer_norm, now))
-            return actions, f"Mouse | direct mapping | {self._mapping_status()}"
+            return actions, f"Mouse | cursor reset | {self._mapping_status()}"
 
         if clutch_active:
             released_drag = self._release_drag_if_needed(actions)
@@ -358,8 +361,9 @@ class MouseController:
                 else f"Mouse | clutch | {self._mapping_status()}"
             )
 
+        clutch_repositioned = False
         if self.state.clutch_active:
-            self._commit_clutch_offset(pointer_norm, now)
+            clutch_repositioned = self._commit_clutch_offset(pointer_norm, now)
 
         click_status: str | None = None
         freeze_for_click = False
@@ -410,6 +414,8 @@ class MouseController:
 
         if click_status is not None:
             base_status = click_status
+        elif clutch_repositioned:
+            base_status = "Mouse | hand repositioned"
         elif self.state.drag_active or self.state.motion_awake:
             base_status = "Mouse"
         else:
