@@ -82,7 +82,7 @@ These labels may still be predicted by the existing model, but they will not dri
 
 ### Double click
 - Meaning: two quick left tap cycles within the configured interval.
-- Runtime action: first click happens on the first release, and the second click may fire as the second pinch begins so the OS interprets them as a double click more easily.
+- Runtime action: first click happens on the first release, and the second quick pinch emits an explicit OS double-click action.
 
 ### Right click
 - Physical pose: thumb-middle pinch.

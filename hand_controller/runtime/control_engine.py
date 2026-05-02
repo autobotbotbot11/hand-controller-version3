@@ -124,6 +124,8 @@ class LiveControlEngine:
             if click_status == "Mouse | double click" and action.button == "left":
                 return "Double Click"
             return "Left Click" if action.button == "left" else "Right Click"
+        if isinstance(action, DoubleClick):
+            return "Double Click"
         if isinstance(action, MouseDown) and action.button == "left":
             return "Drag Start"
         if isinstance(action, MouseUp) and action.button == "left":

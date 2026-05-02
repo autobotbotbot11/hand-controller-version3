@@ -50,7 +50,7 @@ These decisions are intentional and should not be changed casually.
 ### Click ownership
 - Final behavior for mouse clicks is rule-based.
 - `left click` = quick thumb-index pinch-and-release
-- `double click` = first left tap releases normally, then the second click can fire as the second pinch begins
+- `double click` = first left tap releases normally, then the second quick pinch emits an explicit OS double-click action
 - `double_click_assist_window` limits how long that early second-click assist stays active so drag is less likely to be stolen
 - `right click` = thumb-middle pinch down
 - `drag` = thumb-index pinch held long enough to trigger left-button hold

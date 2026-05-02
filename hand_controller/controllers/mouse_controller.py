@@ -5,7 +5,7 @@ import math
 
 from ..config.settings import MouseClickConfig, MouseMotionConfig
 from ..gestures import MouseClickGestureState
-from .actions import Action, Click, MouseDown, MouseUp, MoveTo
+from .actions import Action, Click, DoubleClick, MouseDown, MouseUp, MoveTo
 
 
 @dataclass(slots=True)
@@ -137,7 +137,7 @@ class MouseController:
                 )
                 and (now - self.state.last_left_click) >= self.click_settings.click_cooldown
             ):
-                actions.append(Click(button="left"))
+                actions.append(DoubleClick())
                 self.state.last_left_click = now
                 self.state.left_press_started = None
                 self.state.left_second_tap_active = True
