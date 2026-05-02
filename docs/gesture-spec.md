@@ -120,8 +120,9 @@ These labels may still be predicted by the existing model, but they will not dri
 - Cursor target is absolute screen position from the thumb-index midpoint.
 - Rule-based click/drag-start gestures also require `press_gestures_safe == True`.
 - Clicking is blocked while `hold` is active.
-- During a left pinch, movement freezes only until drag starts.
-- During a right pinch, movement stays frozen until the pinch is released.
+- During a left pinch, movement aim-locks to the current cursor target until release or drag start.
+- During a right pinch, movement aim-locks to the current cursor target until the pinch is released.
+- Aim-lock preserves the motion filter anchor instead of repeatedly resetting it while the pinch is held.
 - `undo` and `redo` are ML-owned one-shot commands in mouse mode.
 
 ## Keyboard mode rules

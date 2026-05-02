@@ -174,6 +174,7 @@ Completed:
 - Mouse UX / click polish:
   - mouse mode draws a split thumb-index line only, without a pointer dot, to avoid visually covering native desktop hover feedback near the cursor
   - explicit OS double-click uses a shorter click interval to reduce perceived lag during the second tap
+  - mouse click pinches now use aim-lock instead of repeatedly resetting the motion filter while the pinch is held
 - Selfie / quick-tools UX:
   - the selfie camera preview is now a separate frameless always-on-top `SelfieWindow`, not drawn inside the transparent keyboard overlay
   - the selfie preview is draggable, resizable from all four corners, keeps a 4:3 aspect ratio, has hover-only controls, and persists custom position/size through tuning updates

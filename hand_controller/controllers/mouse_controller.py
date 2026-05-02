@@ -21,6 +21,8 @@ class MouseMotionState:
     left_press_started: float | None = None
     left_second_tap_active: bool = False
     drag_active: bool = False
+    aim_lock_x: float | None = None
+    aim_lock_y: float | None = None
 
 
 class MouseController:
@@ -46,6 +48,11 @@ class MouseController:
         self.state.filtered_y = None
         self.state.last_seen = 0.0
         self.state.motion_awake = False
+        self._clear_aim_lock()
+
+    def _clear_aim_lock(self) -> None:
+        self.state.aim_lock_x = None
+        self.state.aim_lock_y = None
 
     def _cancel_left_press(self) -> None:
         self.state.left_press_started = None
@@ -68,6 +75,39 @@ class MouseController:
             max(0, min(max_x, int(round(x_norm * max_x)))),
             max(0, min(max_y, int(round(y_norm * max_y)))),
         )
+
+    def _clamp_screen_point(self, x: float, y: float) -> tuple[int, int]:
+        max_x = max(0, self.screen_w - 1)
+        max_y = max(0, self.screen_h - 1)
+        return (
+            max(0, min(max_x, int(round(x)))),
+            max(0, min(max_y, int(round(y)))),
+        )
+
+    def _ensure_aim_lock(self, pointer_norm: tuple[float, float], now: float) -> MoveTo | None:
+        target_x, target_y = self._screen_target(pointer_norm)
+        emit_move = False
+
+        if self.state.aim_lock_x is None or self.state.aim_lock_y is None:
+            if self.state.prev_x is not None and self.state.prev_y is not None:
+                lock_x, lock_y = self._clamp_screen_point(self.state.prev_x, self.state.prev_y)
+            elif self.state.filtered_x is not None and self.state.filtered_y is not None:
+                lock_x, lock_y = self._clamp_screen_point(self.state.filtered_x, self.state.filtered_y)
+            else:
+                lock_x, lock_y = target_x, target_y
+                emit_move = True
+            self.state.aim_lock_x = float(lock_x)
+            self.state.aim_lock_y = float(lock_y)
+        else:
+            lock_x, lock_y = self._clamp_screen_point(self.state.aim_lock_x, self.state.aim_lock_y)
+
+        self.state.prev_x = float(lock_x)
+        self.state.prev_y = float(lock_y)
+        self.state.filtered_x = float(lock_x)
+        self.state.filtered_y = float(lock_y)
+        self.state.last_seen = now
+        self.state.motion_awake = False
+        return MoveTo(lock_x, lock_y) if emit_move else None
 
     def _filter_target(self, x: float, y: float) -> tuple[float, float]:
         alpha = max(0.0, min(1.0, self.motion_settings.ema_alpha))
@@ -240,8 +280,12 @@ class MouseController:
             actions.extend(click_actions)
 
         if freeze_for_click:
-            self._reset_motion()
+            lock_move = self._ensure_aim_lock(pointer_norm, now)
+            if lock_move is not None:
+                actions.insert(0, lock_move)
             return actions, click_status or "Mouse | click ready"
+
+        self._clear_aim_lock()
 
         if not movement_allowed:
             self._reset_motion()

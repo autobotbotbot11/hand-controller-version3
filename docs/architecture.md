@@ -49,7 +49,8 @@ Current movement model:
 - cursor target = midpoint between thumb tip and index tip
 - target maps directly to screen coordinates, matching the keyboard pointer mental model
 - light smoothing plus wake/sleep thresholds reduce small tracking jitter
-- click pinches still freeze movement before drag starts
+- click pinches aim-lock to the current cursor target before release or drag start
+- aim-lock preserves the motion filter anchor instead of repeatedly resetting it while the pinch is held
 - drag resumes movement after the left-button hold starts
 - fast action execution with no extra per-action pause
 
