@@ -54,7 +54,7 @@ Exit criteria:
 
 ## Phase 6: MLP Adapter
 - Load existing artifacts.
-- Honor `toggle`, `hold`, `undo`, `redo`.
+- Honor `toggle`, `hold`, and `undo`; `redo` is temporarily disabled until the MLP conflict is fixed.
 - Ignore MLP click labels for behavior.
 - Keep running even when ML artifacts or dependencies are temporarily unavailable.
 

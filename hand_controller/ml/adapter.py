@@ -6,7 +6,14 @@ from dataclasses import dataclass
 from ..config.settings import MLConfig
 from ..controllers.actions import Action, Hotkey
 from ..runtime.state import RuntimeState
-from .labels import ML_LABEL_HOLD, ML_LABEL_IDLE, ML_LABEL_REDO, ML_LABEL_TOGGLE, ML_LABEL_UNDO
+from .labels import (
+    ML_LABEL_HOLD,
+    ML_LABEL_IDLE,
+    ML_LABEL_REDO,
+    ML_LABEL_TOGGLE,
+    ML_LABEL_UNDO,
+    canonicalize_label,
+)
 from .predictor import MLPrediction
 
 
@@ -28,6 +35,9 @@ class MLControlAdapter:
         self._toggle_fired_for_hold = False
         self._last_toggle_time = 0.0
         self._last_shortcut_time = 0.0
+        self._accepted_action_labels = {
+            canonicalize_label(label) for label in config.accepted_action_labels
+        }
 
     def _is_confirmed(self, label: str) -> bool:
         if label == ML_LABEL_IDLE:
@@ -38,17 +48,20 @@ class MLControlAdapter:
         recent = list(self._memory)[-needed:]
         return all(entry == label for entry in recent)
 
+    def _is_accepted(self, label: str) -> bool:
+        return label in self._accepted_action_labels
+
     def update(self, prediction: MLPrediction, state: RuntimeState, now: float) -> MLControlUpdate:
         current_label = prediction.label if prediction.available else ML_LABEL_IDLE
         self._memory.append(current_label)
 
-        if self._is_confirmed(ML_LABEL_TOGGLE):
+        if self._is_accepted(ML_LABEL_TOGGLE) and self._is_confirmed(ML_LABEL_TOGGLE):
             stable_label = ML_LABEL_TOGGLE
-        elif self._is_confirmed(ML_LABEL_HOLD):
+        elif self._is_accepted(ML_LABEL_HOLD) and self._is_confirmed(ML_LABEL_HOLD):
             stable_label = ML_LABEL_HOLD
-        elif self._is_confirmed(ML_LABEL_UNDO):
+        elif self._is_accepted(ML_LABEL_UNDO) and self._is_confirmed(ML_LABEL_UNDO):
             stable_label = ML_LABEL_UNDO
-        elif self._is_confirmed(ML_LABEL_REDO):
+        elif self._is_accepted(ML_LABEL_REDO) and self._is_confirmed(ML_LABEL_REDO):
             stable_label = ML_LABEL_REDO
         else:
             stable_label = ML_LABEL_IDLE

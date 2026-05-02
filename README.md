@@ -3,13 +3,13 @@
 Hand-tracking mouse and keyboard controller ito na gumagamit ng:
 - MediaPipe for hand tracking
 - rule-based mouse at keyboard interaction
-- MLP para sa high-level commands (`toggle`, `hold`, `undo`, `redo`)
+- MLP para sa high-level commands (`toggle`, `hold`, `undo`; `redo` temporarily disabled)
 
 ## Ano Ang Gumagana Ngayon
 - mouse movement
 - left click, right click, double click
 - drag and drop
-- ML `toggle`, `hold`, `undo`, `redo`
+- ML `toggle`, `hold`, `undo`; `redo` temporarily disabled
 - on-screen keyboard overlay
 - 2-page keyboard (`ABC` + `123/symbols`)
 - `Shift`, `Caps Lock`, `Backspace`, `Space`, `Enter`, `ESC`, `TAB`
@@ -68,7 +68,7 @@ python -m hand_controller --ui-live --tuning .\tuning.testing.json
 - reset cursor: thumb + pinky pinch; ibabalik ang cursor sa current hand position
 - ML `toggle`: on/off ng control without stopping recognition
 - ML `undo`: `Ctrl+Z`
-- ML `redo`: `Ctrl+Y`
+- ML `redo`: temporarily disabled; no action muna
 - note: kapag masyadong side-view ang kamay, binablock ang accidental rule-based press gestures for safety
 
 ### Keyboard Overlay

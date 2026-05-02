@@ -38,8 +38,8 @@ This document freezes the meaning of each gesture before implementation starts.
 
 ### `redo`
 - Physical pose: second two-finger pose from the original MLP dataset.
-- Runtime action: `Ctrl+Y`.
-- Scope for v1: active when control is enabled.
+- Runtime action: temporarily disabled; no action is emitted.
+- Reason: the current MLP can confuse `redo` with `undo`, so `redo` is filtered out until the model is fixed.
 
 ### Ignored MLP labels
 - `left_click`
@@ -129,7 +129,7 @@ These labels may still be predicted by the existing model, but they will not dri
 - During a left pinch, movement aim-locks to the current cursor target until release or drag start.
 - During a right pinch, movement aim-locks to the current cursor target until the pinch is released.
 - Aim-lock preserves the motion filter anchor instead of repeatedly resetting it while the pinch is held.
-- `undo` and `redo` are ML-owned one-shot commands.
+- `undo` is an ML-owned one-shot command; `redo` is temporarily filtered out.
 
 ## Keyboard overlay rules
 - Keyboard visibility is toggled by the rule-based thumb-ring gesture.

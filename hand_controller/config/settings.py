@@ -186,7 +186,7 @@ class HandSelectorConfig:
 @dataclass(slots=True, frozen=True)
 class MLConfig:
     enabled: bool = True
-    accepted_action_labels: tuple[str, ...] = ("toggle", "hold", "undo", "redo")
+    accepted_action_labels: tuple[str, ...] = ("toggle", "hold", "undo")
     ignored_behavior_labels: tuple[str, ...] = ("left_click", "right_click", "idle")
     scaler_path: str = field(
         default_factory=lambda: str(DEFAULT_ARTIFACTS_DIR / "validator_scaler.joblib")
@@ -345,6 +345,7 @@ def tuning_snapshot(config: AppConfig) -> dict[str, Any]:
         "mouse_motion": asdict(config.mouse_motion),
         "ml": {
             "enabled": config.ml.enabled,
+            "accepted_action_labels": config.ml.accepted_action_labels,
             "gate_min_p1": config.ml.gate_min_p1,
             "gate_min_margin": config.ml.gate_min_margin,
             "stability_window": config.ml.stability_window,

@@ -6,7 +6,7 @@ from pathlib import Path
 from ..config.settings import MLConfig
 from ..vision.models import DetectedHand
 from .geo18 import extract_geo18
-from .labels import ACTIVE_ACTION_LABELS, IGNORED_BEHAVIOR_LABELS, ML_LABEL_IDLE, canonicalize_label
+from .labels import IGNORED_BEHAVIOR_LABELS, ML_LABEL_IDLE, canonicalize_label
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,7 +81,8 @@ class MLPredictor:
         canonical = canonicalize_label(raw_label)
         if canonical in IGNORED_BEHAVIOR_LABELS:
             return ML_LABEL_IDLE
-        if canonical not in ACTIVE_ACTION_LABELS:
+        accepted = {canonicalize_label(label) for label in self.config.accepted_action_labels}
+        if canonical not in accepted:
             return ML_LABEL_IDLE
         if canonical == ML_LABEL_IDLE:
             return ML_LABEL_IDLE

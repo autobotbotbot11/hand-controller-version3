@@ -106,5 +106,5 @@ Current movement model:
 - Keyboard overlay
 - Control toggle
 - Clutch
-- Undo / redo
+- Undo; redo is temporarily disabled until the MLP conflict is fixed
 - Minimal UI with room for later tuning controls

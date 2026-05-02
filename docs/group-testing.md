@@ -26,7 +26,7 @@ This starts the current live app path:
 - transparent overlay
 - mouse control
 - keyboard overlay
-- ML `toggle`, `hold`, `undo`, `redo`
+- ML `toggle`, `hold`, `undo`; `redo` temporarily disabled
 - async camera refresh and launch preflight
 - dark mode by default
 
@@ -43,8 +43,8 @@ It uses:
 - drag and drop
 - ML `toggle` on/off
 - ML `hold` clutch/reposition
-- thumb-pinky direct-mapping reset
-- `undo` / `redo`
+- thumb-pinky cursor reset
+- `undo`
 - side-view safety
   - rule-based clicks and keyboard pinches should not fire easily when the hand is too side-view
 - keyboard overlay show/hide
@@ -77,6 +77,7 @@ Use simple notes like this:
 - ML toggle: good / bad
 - ML hold clutch/reposition: good / bad
 - thumb-pinky reset: good / bad
+- ML undo: good / bad
 - side-view safety: good / bad
 - keyboard typing: good / bad
 - camera source / refresh: good / bad

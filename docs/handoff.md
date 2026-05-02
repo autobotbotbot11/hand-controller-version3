@@ -77,7 +77,8 @@ These decisions are intentional and should not be changed casually.
 ### Undo / Redo
 - Keep both in the rewrite.
 - `undo` = `Ctrl+Z`
-- `redo` = `Ctrl+Y`
+- `redo` is temporarily disabled and emits no action.
+- Reason: the current MLP can confuse `redo` with `undo`; re-enable it after the model is fixed.
 - These are ML-owned commands.
 - Recommended scope for v1: mouse control layer.
 
@@ -136,7 +137,7 @@ Completed:
 - Phase 3 validated on the user's machine
 - Phase 4 validated on the user's machine: stable mouse movement is smooth and usable
 - Phase 5 click/drag refactor code: release-based left tap, easier double-click path, down-triggered right click, hold-to-drag, JSON tuning overrides, and updated `--mouse-smoke`
-- Phase 6 baseline code: MLP predictor, action adapter, fallback artifact lookup to `touch-v15`, and integrated `toggle` / `hold` / `undo` / `redo` in `--mouse-smoke`
+- Phase 6 baseline code: MLP predictor, action adapter, fallback artifact lookup to `touch-v15`, and integrated `toggle` / `hold` / `undo` in `--mouse-smoke`; `redo` is currently disabled as a no-op
 - Phase 8 baseline code: rule-based thumb-ring keyboard overlay toggle, keyboard overlay, pinch-to-type keypresses, backspace gesture, one-shot Shift support, and integrated control smoke runner
 - Phase K1 foundation code: `ui/main_window.py`, `ui/overlay_window.py`, `ui/signals.py`, typed overlay payloads, and `--ui-smoke` for validating the Qt overlay architecture
 - Phase K2/K3 baseline code: `runtime/ui_live_control.py` and `--ui-live` now run the real CV worker through the Qt control panel + transparent overlay path
@@ -287,7 +288,7 @@ The baseline phases are already implemented. The likely next task is keyboard UX
 - `toggle` must not kill recognition.
 - `idle` must not be used as the basis for movement semantics.
 - Keyboard behavior should come from the cleaner `hand_controller` design.
-- `undo` and `redo` are normal mouse-layer commands; the keyboard overlay does not disable them.
+- `undo` is a normal mouse-layer command; `redo` is temporarily disabled as a no-op until the MLP is fixed.
 - `hold` is clutch/freeze; do not reintroduce a keyboard-only quick mouse bridge unless there is a strong UX reason.
 - Clicking should stay rule-based even if the MLP predicts click labels.
 - Mouse movement is now absolute screen-space movement from the thumb-index midpoint, not relative hand deltas.

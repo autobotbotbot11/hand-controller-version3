@@ -225,7 +225,7 @@ Rules:
 - original plan: keyboard mode disables mouse movement/click behavior
 - current app behavior: keyboard is an overlay, mouse movement remains active, and outside-keyboard pinches may route through mouse clicking
 - current app behavior: closed fist is mouse-layer clutch/freeze, not a keyboard-only quick mouse bridge
-- MLP `undo` and `redo` remain active as mouse-layer commands while the keyboard overlay is visible
+- MLP `undo` remains active as a mouse-layer command while the keyboard overlay is visible; `redo` is temporarily disabled
 
 Exit criteria:
 - switching mouse <-> keyboard is stable and predictable

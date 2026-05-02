@@ -49,7 +49,7 @@ It should improve:
 ### 1. Keyboard is mostly rule-based
 - Original V1 assumption: keyboard interactions should not depend on the MLP.
 - Current app behavior: MLP `hold` remains a mouse-layer clutch/freeze while the keyboard overlay is visible.
-- MLP labels such as `undo` and `redo` must not drive keyboard actions.
+- MLP labels such as `undo` and `redo` must not drive keyboard typing actions.
 - Keyboard typing behavior must remain understandable from geometry and pinch rules only.
 
 ### 2. Overlay architecture is required
@@ -250,7 +250,7 @@ This allows:
 - `keyboard_visible` must be `True`
 - Original V1 assumption: MLP `hold` is ignored in keyboard mode
 - Current app behavior: MLP `hold` freezes/clutches mouse movement while the keyboard overlay remains visible
-- MLP `undo` and `redo` stay active as mouse-layer commands while the keyboard overlay is visible
+- MLP `undo` stays active as a mouse-layer command while the keyboard overlay is visible; `redo` is temporarily disabled
 - Original V1 assumption: mouse movement and mouse click actions are disabled in keyboard mode
 - Current app behavior: mouse movement remains active, and outside-keyboard pinches may route through mouse clicking
 
