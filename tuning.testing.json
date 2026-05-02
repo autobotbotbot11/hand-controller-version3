@@ -9,7 +9,7 @@
     "click_cooldown": 0.08,
     "double_click_interval": 1.5,
     "double_click_assist_window": 0.95,
-    "left_hold_drag_seconds": 0.8
+    "left_hold_drag_seconds": 0.4
   },
   "keyboard": {
     "height_ratio": 0.3,
@@ -34,7 +34,7 @@
     "require_palm_facing_for_toggle": true,
     "selfie_position": "custom",
     "selfie_custom_x_ratio": 0.0,
-    "selfie_custom_y_ratio": 0.3426124197002141,
+    "selfie_custom_y_ratio": 0.0,
     "selfie_width_px": 196,
     "selfie_height_px": 147,
     "quick_toolbar_edge": "top",
