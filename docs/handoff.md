@@ -35,11 +35,10 @@ These decisions are intentional and should not be changed casually.
 
 ### Hold safety freeze
 - ML `hold` uses the closed-fist pose.
-- In mouse mode, `hold` now means safety freeze.
-- Mouse-mode safety freeze disables mouse movement and mouse clicks.
-- In keyboard mode, there is one intentional exception: closed fist currently enables a quick mouse-control bridge while held.
-- Keyboard-mode closed fist still blocks mouse clicking while movement is active, because the fist pose can accidentally collapse into thumb-index or thumb-middle contact.
-- Reason: the user needs a fast way to move the mouse while typing, but click lock during fist movement keeps the bridge safer.
+- `hold` now means safety freeze.
+- Safety freeze disables mouse movement and mouse clicks.
+- The keyboard overlay does not change this; closed fist is no longer a quick mouse-control bridge.
+- Reason: mouse control remains active while the keyboard is visible, so a separate closed-fist bridge is no longer needed.
 
 ### Idle
 - `idle` is a real MLP class.
@@ -58,18 +57,19 @@ These decisions are intentional and should not be changed casually.
 
 ### Keyboard
 - Keyboard logic should follow the better design from `hand_controller`.
-- Keyboard toggle is a rule-based thumb-ring hold.
+- Keyboard visibility is toggled by a rule-based thumb-ring hold.
 - Do not use the two-hand idle keyboard activation logic from `touch-v15`.
-- Keyboard mode includes:
+- Keyboard is an on-screen overlay tool layered on top of normal mouse control.
+- Keyboard overlay includes:
   - keyboard pointer = midpoint between thumb tip and index tip
   - visible pointer guidance: thin line from thumb tip to index tip plus a midpoint dot
   - thumb-index pinch to type hovered key
   - thumb-middle pinch for backspace when hovering the keyboard
   - thumb-pinky pinch for one-shot Shift
-  - closed-fist quick mouse movement while held
-  - outside-keyboard thumb-index pinch routes through the existing mouse left-click / drag path
-  - outside-keyboard thumb-middle pinch routes through the existing mouse right-click path
-- Keyboard keys dim while the closed-fist quick mouse-control bridge is active.
+  - outside-keyboard thumb-index pinch routes through the normal mouse left-click / drag path
+  - outside-keyboard thumb-middle pinch routes through the normal mouse right-click path
+- Mouse cursor movement continues while the keyboard overlay is visible.
+- Hovered keyboard keys take priority over mouse clicks.
 - The midpoint pointer is still an experiment, not a permanent final UX decision.
 
 ### Undo / Redo
@@ -77,7 +77,7 @@ These decisions are intentional and should not be changed casually.
 - `undo` = `Ctrl+Z`
 - `redo` = `Ctrl+Y`
 - These are ML-owned commands.
-- Recommended scope for v1: mouse mode only.
+- Recommended scope for v1: mouse control layer.
 
 ## Known physical MLP gesture poses
 
@@ -100,7 +100,7 @@ The most important rule:
 Example:
 - do not add clicking before mouse movement is stable
 - do not add ML behavior before the base mouse controller is coherent
-- do not add keyboard mode before mouse mode is solid
+- do not add keyboard overlay behavior before mouse control is solid
 
 ## Dependency baseline
 
@@ -135,11 +135,11 @@ Completed:
 - Phase 4 validated on the user's machine: stable mouse movement is smooth and usable
 - Phase 5 click/drag refactor code: release-based left tap, easier double-click path, down-triggered right click, hold-to-drag, JSON tuning overrides, and updated `--mouse-smoke`
 - Phase 6 baseline code: MLP predictor, action adapter, fallback artifact lookup to `touch-v15`, and integrated `toggle` / `hold` / `undo` / `redo` in `--mouse-smoke`
-- Phase 8 baseline code: rule-based thumb-ring keyboard mode toggle, keyboard overlay, pinch-to-type keypresses, backspace gesture, one-shot Shift gesture, and integrated control smoke runner
+- Phase 8 baseline code: rule-based thumb-ring keyboard overlay toggle, keyboard overlay, pinch-to-type keypresses, backspace gesture, one-shot Shift gesture, and integrated control smoke runner
 - Phase K1 foundation code: `ui/main_window.py`, `ui/overlay_window.py`, `ui/signals.py`, typed overlay payloads, and `--ui-smoke` for validating the Qt overlay architecture
 - Phase K2/K3 baseline code: `runtime/ui_live_control.py` and `--ui-live` now run the real CV worker through the Qt control panel + transparent overlay path
 - Phase K4 baseline code: `controllers/keyboard_controller.py` now builds a data-driven full keyboard layout with a complete practical key set and configurable row/size/width settings
-- Phase K6 cleanup code: `runtime/control_engine.py` now centralizes mouse mode, keyboard mode, ML updates, and transition cleanup so both `--control-smoke` and `--ui-live` share the same behavior
+- Phase K6 cleanup code: `runtime/control_engine.py` now centralizes mouse control, keyboard overlay, ML updates, and transition cleanup so both `--control-smoke` and `--ui-live` share the same behavior
 - Hardening baseline: local ML artifacts now exist in `artifacts/`, and `runtime/validation.py` provides a repo-local validation command
 - Phase K7 config exposure: the Qt overlay now reads keyboard visual settings from `KeyboardConfig`, including selfie size, pointer radius, skeleton visibility, font sizes, and status panel sizing
 - Keyboard redesign baseline: `controllers/keyboard_controller.py` now uses a 2-page model (`ABC` + `123/symbols`), fixes punctuation key output mappings, adds `Caps Lock`, and visibly changes alpha-page case for `Shift` / `Caps`
@@ -164,15 +164,16 @@ Completed:
   - this covers left/right/double click, drag start, keyboard toggle, and keyboard typing pinches
   - movement is not fully blocked by this gate; it is only for press-like activations
 - Control toggle polish:
-  - if the user is in keyboard mode and turns control off with the ML `toggle`, the keyboard overlay hides immediately
-  - turning control back on restores the previous mode instead of forcing mouse mode
+  - if the keyboard overlay is visible and the user turns control off with the ML `toggle`, the keyboard overlay hides visually
+  - turning control back on restores the keyboard overlay if it was previously visible
 - Keyboard UX experiments:
   - the keyboard hover/click point currently uses the thumb-index midpoint instead of raw index tip
   - the overlay draws the thumb-index line and midpoint dot so the user can judge the behavior clearly
-  - keyboard mode has a quick mouse-control bridge: closed fist moves the mouse while held, outside-keyboard pinches can click, and hovered keyboard keys keep keyboard priority
-  - the keyboard dims while the quick mouse-control bridge is actively moving the mouse
+  - keyboard is now an overlay tool, not a separate user-facing mode
+  - mouse movement remains active while the keyboard overlay is visible
+  - outside-keyboard pinches can click, and hovered keyboard keys keep keyboard priority
 - Mouse UX / click polish:
-  - mouse mode draws a split thumb-index line only, without a pointer dot, to avoid visually covering native desktop hover feedback near the cursor
+  - mouse control draws a split thumb-index line only, without a pointer dot, to avoid visually covering native desktop hover feedback near the cursor
   - explicit OS double-click uses a shorter click interval to reduce perceived lag during the second tap
   - mouse click pinches now use aim-lock instead of repeatedly resetting the motion filter while the pinch is held
   - second-tap thumb-index pinch now waits for release vs hold: quick release emits explicit double-click; hold past the drag threshold starts drag
@@ -249,14 +250,14 @@ Current state:
   - startup feel
   - final control-panel polish
   - selfie/quick-toolbar runtime UX
-  - keyboard usability while staying in keyboard mode
+  - keyboard usability as an overlay on top of mouse control
 
 Recommended next work, in order:
 1. keyboard UX validation
    - test the thumb-index midpoint pointer on small keyboard sizes
-   - test closed-fist quick mouse movement while in keyboard mode
+   - test normal mouse movement while the keyboard overlay is visible
    - test outside-keyboard left/right click routing
-   - test whether the keyboard dim cue is clear enough
+   - test whether keyboard pointer visuals should appear only over keys or over the full screen
    - do not jump to hover latch, pointer freeze, or a keyboard rewrite unless this feedback proves it is needed
 2. group testing / real-user validation
    - run `.\run-tester.ps1`
@@ -283,8 +284,8 @@ The baseline phases are already implemented. The likely next task is keyboard UX
 - `toggle` must not kill recognition.
 - `idle` must not be used as the basis for movement semantics.
 - Keyboard behavior should come from the cleaner `hand_controller` design.
-- `undo` and `redo` should stay inactive while in keyboard mode.
-- `hold` has a narrow keyboard-mode exception for quick mouse movement while held; do not broaden it into unrelated keyboard commands.
+- `undo` and `redo` are normal mouse-layer commands; the keyboard overlay does not disable them.
+- `hold` is safety freeze; do not reintroduce a keyboard-only quick mouse bridge unless there is a strong UX reason.
 - Clicking should stay rule-based even if the MLP predicts click labels.
 - Mouse movement is now absolute screen-space movement from the thumb-index midpoint, not relative hand deltas.
 - Do not remove the shared hand-view press-safety gate unless a better global safety replacement exists.

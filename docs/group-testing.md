@@ -24,8 +24,8 @@ This will:
 This starts the current live app path:
 - control panel window
 - transparent overlay
-- mouse mode
-- keyboard mode
+- mouse control
+- keyboard overlay
 - ML `toggle`, `hold`, `undo`, `redo`
 - async camera refresh and launch preflight
 - dark mode by default
@@ -46,7 +46,8 @@ It uses:
 - `undo` / `redo`
 - side-view safety
   - rule-based clicks and keyboard pinches should not fire easily when the hand is too side-view
-- keyboard mode switch
+- keyboard overlay show/hide
+- mouse movement while the keyboard overlay is visible
 - typing on the `ABC` page
 - switching to the `123/symbols` page
 - `Shift`

@@ -33,12 +33,12 @@
     "mode_toggle_cooldown_seconds": 0.0,
     "require_palm_facing_for_toggle": true,
     "selfie_position": "custom",
-    "selfie_custom_x_ratio": 0.0,
-    "selfie_custom_y_ratio": 0.0,
-    "selfie_width_px": 196,
-    "selfie_height_px": 147,
+    "selfie_custom_x_ratio": 0.012307692307692308,
+    "selfie_custom_y_ratio": 0.023282887077997673,
+    "selfie_width_px": 295,
+    "selfie_height_px": 221,
     "quick_toolbar_edge": "top",
-    "quick_toolbar_offset_ratio": 0.656392694063927
+    "quick_toolbar_offset_ratio": 0.21038543897216275
   },
   "ml": {
     "confirm_frames": 2,

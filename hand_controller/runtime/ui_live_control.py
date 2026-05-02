@@ -8,12 +8,12 @@ from typing import TYPE_CHECKING
 import cv2
 
 from ..config.settings import AppConfig
-from ..controllers.keyboard_controller import KeyboardUpdate
+from ..controllers.keyboard_controller import KeyboardPointer, KeyboardUpdate
 from ..gestures import MouseClickGestureState
 from ..ml import MLPrediction, MLPredictor
 from ..runtime.control_engine import LiveControlEngine
 from ..runtime.diagnostics import diagnostics_enabled, diagnostics_log_path, log_diagnostic
-from ..runtime.state import Mode, RuntimeState
+from ..runtime.state import RuntimeState
 from ..ui.payloads import OverlayKeyRect, OverlayPayload, OverlayPointer
 from ..vision.camera import Camera
 from ..vision.hand_tracker import HandTracker
@@ -64,19 +64,27 @@ def _build_keyboard_keys(keyboard_update: KeyboardUpdate) -> tuple[OverlayKeyRec
     )
 
 
+def _pointer_over_key(pointer: KeyboardPointer, keyboard_update: KeyboardUpdate) -> bool:
+    return any(key.x1 <= pointer.x <= key.x2 and key.y1 <= pointer.y <= key.y2 for key in keyboard_update.layout)
+
+
 def _build_pointer_payload(keyboard_update: KeyboardUpdate) -> tuple[OverlayPointer, ...]:
-    return tuple(
-        OverlayPointer(
-            x=pointer.x,
-            y=pointer.y,
-            hand_label=_overlay_hand_label(pointer.hand_label),
-            thumb_x=pointer.thumb_x,
-            thumb_y=pointer.thumb_y,
-            index_x=pointer.index_x,
-            index_y=pointer.index_y,
+    pointers: list[OverlayPointer] = []
+    for pointer in keyboard_update.pointers:
+        if not _pointer_over_key(pointer, keyboard_update):
+            continue
+        pointers.append(
+            OverlayPointer(
+                x=pointer.x,
+                y=pointer.y,
+                hand_label=_overlay_hand_label(pointer.hand_label),
+                thumb_x=pointer.thumb_x,
+                thumb_y=pointer.thumb_y,
+                index_x=pointer.index_x,
+                index_y=pointer.index_y,
+            )
         )
-        for pointer in keyboard_update.pointers
-    )
+    return tuple(pointers)
 
 
 def _overlay_hand_label(label: str) -> str:
@@ -126,7 +134,7 @@ def _build_debug_tags(
     drag_active: bool,
     ml_prediction: MLPrediction,
     ml_status: str,
-    mode_toggle_status: str,
+    keyboard_toggle_status: str,
     ml_available: bool,
     ml_reason: str | None,
     pre_hold_right_suppressed: bool,
@@ -154,7 +162,7 @@ def _build_debug_tags(
             f"drag={'yes' if drag_active else 'no'}",
             f"click_idx={'down' if click_state.left_pressed else 'up'}",
             f"click_mid={'down' if click_state.right_pressed else 'up'}",
-            mode_toggle_status,
+            keyboard_toggle_status,
         ]
     )
     tags = [ml_line, mouse_line, press_safety_status]
@@ -175,8 +183,8 @@ def _build_overlay_payload(
     gesture_command_text: str,
     debug_tags: tuple[str, ...],
 ) -> OverlayPayload:
-    keyboard_visible = runtime_state.control_enabled and runtime_state.mode == Mode.KEYBOARD
-    mouse_visible = runtime_state.control_enabled and runtime_state.mode == Mode.MOUSE
+    keyboard_visible = runtime_state.control_enabled and runtime_state.keyboard_visible
+    mouse_visible = runtime_state.control_enabled
     if keyboard_visible:
         finger_points = _build_pointer_payload(keyboard_update)
     elif mouse_visible:
@@ -185,10 +193,10 @@ def _build_overlay_payload(
         finger_points = ()
 
     return OverlayPayload(
-        mode=runtime_state.mode.value,
+        mode="keyboard" if keyboard_visible else "mouse",
         control_enabled=runtime_state.control_enabled,
         keyboard_visible=keyboard_visible,
-        keyboard_dimmed=keyboard_visible and movement_enabled,
+        keyboard_dimmed=False,
         keyboard_keys=_build_keyboard_keys(keyboard_update) if keyboard_visible else (),
         highlight_labels=keyboard_update.highlight_labels if keyboard_visible else frozenset(),
         finger_points=finger_points,
@@ -268,7 +276,7 @@ def run_ui_live_worker(
                         drag_active=frame_result.drag_active,
                         ml_prediction=frame_result.ml_prediction,
                         ml_status=frame_result.ml_status,
-                        mode_toggle_status=frame_result.mode_toggle_status,
+                        keyboard_toggle_status=frame_result.keyboard_toggle_status,
                         ml_available=frame_result.ml_available,
                         ml_reason=frame_result.ml_reason,
                         pre_hold_right_suppressed=frame_result.pre_hold_right_suppressed,

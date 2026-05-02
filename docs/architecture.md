@@ -14,7 +14,7 @@ This rewrite keeps the code modular and intentionally separates perception, deci
 - `hand_controller/gestures/`
   - rule-based gesture utilities and pinch detectors
 - `hand_controller/controllers/`
-  - mouse controller, keyboard controller, and mode/control-state controllers
+  - mouse controller, keyboard controller, and keyboard-overlay/control-state controllers
 - `hand_controller/runtime/`
   - runtime state and the frame-by-frame orchestration loop
 - `hand_controller/ui/`
@@ -41,8 +41,8 @@ Current practical note:
   - UI-live prewarm for ML and MediaPipe cold start
 - these are narrow UX/performance helpers, not a general multi-threaded rewrite.
 
-## Mouse movement strategy
-Mouse mode now uses absolute screen-space movement instead of relative hand deltas.
+## Mouse Movement Strategy
+Mouse control now uses absolute screen-space movement instead of relative hand deltas.
 
 Current movement model:
 - stable active-hand selection with hysteresis
@@ -55,17 +55,16 @@ Current movement model:
 - second-tap thumb-index hold can become drag instead of double-click if it crosses the drag threshold
 - fast action execution with no extra per-action pause
 
-## Control model
+## Control Model
 - `control_enabled` is toggled by the MLP `toggle` gesture.
 - Recognition continues even when control is disabled.
-- `mode` is toggled by a rule-based thumb-ring hold.
+- `keyboard_visible` is toggled by a rule-based thumb-ring hold.
+- The keyboard is an overlay tool; it does not replace mouse control.
 - Mouse clicks remain rule-based.
-- `hold` is mapped to mouse-mode safety freeze, not Alt+Tab.
-- Keyboard mode has one narrow `hold` exception: closed fist enables quick mouse movement while held.
-- Keyboard mode is toggled by a rule-based thumb-ring hold and typed with rule-based pinch events.
-- In keyboard mode, hovered keys have priority; outside-keyboard thumb-index and thumb-middle pinches can route through the mouse click controller.
+- `hold` is mapped to safety freeze, not Alt+Tab.
+- While the keyboard is visible, hovered keys have priority; outside-keyboard thumb-index and thumb-middle pinches route through the mouse click controller.
 
-## Global safety model
+## Global Safety Model
 - Mouse movement and rule-based press gestures are not treated the same.
 - Movement still depends primarily on the palm-facing gate and existing mouse-state rules.
 - Press-like rule-based actions now share an extra hand-view safety layer based on hand geometry.
@@ -96,13 +95,12 @@ Current movement model:
 - `SelfieWindow` is draggable, resizable from all four corners, keeps a 4:3 aspect ratio, shows controls only on hover, and persists custom position/size through keyboard tuning updates.
 - `QuickToolbarWindow` is a separate frameless quick-tools window for selfie visibility, skeleton visibility, and reopening the main panel.
 - The quick toolbar can dock to left, right, top, or bottom and persists its edge/offset.
-- The overlay payload includes a keyboard dim state used when keyboard-mode quick mouse movement is active.
 - The current keyboard pointer experiment uses a thumb-index midpoint, with a visible thumb-index line and midpoint dot.
-- Mouse mode draws a split thumb-index line only, without a pointer dot, to avoid visually covering native desktop hover feedback near the cursor.
+- Mouse control draws a split thumb-index line only, without a pointer dot, to avoid visually covering native desktop hover feedback near the cursor.
 
 ## Initial scope
-- Mouse mode
-- Keyboard mode
+- Mouse control
+- Keyboard overlay
 - Control toggle
 - Clutch
 - Undo / redo

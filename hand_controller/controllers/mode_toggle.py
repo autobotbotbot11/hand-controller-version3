@@ -4,18 +4,18 @@ from dataclasses import dataclass
 
 from ..config.settings import KeyboardConfig
 from ..gestures.hand_pinches import HandPinchState
-from ..runtime.state import Mode, RuntimeState
+from ..runtime.state import RuntimeState
 from ..vision.models import DetectedHand
 
 
 @dataclass(frozen=True, slots=True)
-class ModeToggleUpdate:
+class KeyboardOverlayToggleUpdate:
     toggled: bool
-    mode: Mode
+    keyboard_visible: bool
     status: str
 
 
-class KeyboardModeToggleController:
+class KeyboardOverlayToggleController:
     def __init__(self, settings: KeyboardConfig | None = None) -> None:
         self.settings = settings or KeyboardConfig()
         self._tracking_hand_label: str | None = None
@@ -36,25 +36,36 @@ class KeyboardModeToggleController:
         palm_facing: bool,
         pinch_state: HandPinchState | None,
         now: float,
-    ) -> ModeToggleUpdate:
+    ) -> KeyboardOverlayToggleUpdate:
         if not state.control_enabled:
             self.reset()
-            return ModeToggleUpdate(toggled=False, mode=state.mode, status="control off")
+            return KeyboardOverlayToggleUpdate(
+                toggled=False,
+                keyboard_visible=state.keyboard_visible,
+                status="control off",
+            )
 
         if not self.settings.virtual_keyboard_enabled:
-            if state.mode == Mode.KEYBOARD:
-                state.mode = Mode.MOUSE
+            state.keyboard_visible = False
             self.reset()
-            return ModeToggleUpdate(toggled=False, mode=state.mode, status="keyboard disabled")
+            return KeyboardOverlayToggleUpdate(toggled=False, keyboard_visible=False, status="keyboard disabled")
 
         if active_hand is None or pinch_state is None:
             self.reset()
-            return ModeToggleUpdate(toggled=False, mode=state.mode, status="toggle idle")
+            return KeyboardOverlayToggleUpdate(
+                toggled=False,
+                keyboard_visible=state.keyboard_visible,
+                status="toggle idle",
+            )
 
         hand_label = active_hand.label
         if pinch_state.hand_label != hand_label:
             self.reset()
-            return ModeToggleUpdate(toggled=False, mode=state.mode, status="toggle idle")
+            return KeyboardOverlayToggleUpdate(
+                toggled=False,
+                keyboard_visible=state.keyboard_visible,
+                status="toggle idle",
+            )
 
         eligible = pinch_state.ring.pressed and not pinch_state.index.pressed
         if self.settings.require_palm_facing_for_toggle and not palm_facing:
@@ -62,7 +73,11 @@ class KeyboardModeToggleController:
 
         if not eligible:
             self.reset()
-            return ModeToggleUpdate(toggled=False, mode=state.mode, status="toggle idle")
+            return KeyboardOverlayToggleUpdate(
+                toggled=False,
+                keyboard_visible=state.keyboard_visible,
+                status="toggle idle",
+            )
 
         if self._tracking_hand_label != hand_label or self._hold_started_at is None:
             self._tracking_hand_label = hand_label
@@ -71,24 +86,37 @@ class KeyboardModeToggleController:
 
         held_for = max(0.0, now - self._hold_started_at)
         if self._hold_consumed:
-            return ModeToggleUpdate(toggled=False, mode=state.mode, status="toggle armed")
+            return KeyboardOverlayToggleUpdate(
+                toggled=False,
+                keyboard_visible=state.keyboard_visible,
+                status="toggle armed",
+            )
 
         if held_for < self.settings.mode_toggle_hold_seconds:
-            return ModeToggleUpdate(
+            return KeyboardOverlayToggleUpdate(
                 toggled=False,
-                mode=state.mode,
+                keyboard_visible=state.keyboard_visible,
                 status=f"toggle hold {held_for:.2f}/{self.settings.mode_toggle_hold_seconds:.2f}s",
             )
 
         cooldown_remaining = self.settings.mode_toggle_cooldown_seconds - (now - self._last_toggle_time)
         if cooldown_remaining > 0.0:
-            return ModeToggleUpdate(
+            return KeyboardOverlayToggleUpdate(
                 toggled=False,
-                mode=state.mode,
+                keyboard_visible=state.keyboard_visible,
                 status=f"toggle cooldown {cooldown_remaining:.2f}s",
             )
 
-        state.mode = Mode.KEYBOARD if state.mode == Mode.MOUSE else Mode.MOUSE
+        state.keyboard_visible = not state.keyboard_visible
         self._last_toggle_time = now
         self._hold_consumed = True
-        return ModeToggleUpdate(toggled=True, mode=state.mode, status=f"mode={state.mode.value} | toggled")
+        status = f"keyboard={'visible' if state.keyboard_visible else 'hidden'} | toggled"
+        return KeyboardOverlayToggleUpdate(
+            toggled=True,
+            keyboard_visible=state.keyboard_visible,
+            status=status,
+        )
+
+
+ModeToggleUpdate = KeyboardOverlayToggleUpdate
+KeyboardModeToggleController = KeyboardOverlayToggleController

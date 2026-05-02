@@ -10,7 +10,7 @@ Hand-tracking mouse and keyboard controller ito na gumagamit ng:
 - left click, right click, double click
 - drag and drop
 - ML `toggle`, `hold`, `undo`, `redo`
-- keyboard mode with transparent overlay
+- on-screen keyboard overlay
 - 2-page keyboard (`ABC` + `123/symbols`)
 - `Shift`, `Caps Lock`, `Backspace`, `Space`, `Enter`, `ESC`, `TAB`
 - side-view safety para sa rule-based press gestures
@@ -52,13 +52,13 @@ python -m hand_controller --ui-live --tuning .\tuning.testing.json
 `--ui-live` ang main app path:
 - control panel window
 - transparent overlay
-- mouse mode
-- keyboard mode
+- mouse control
+- keyboard overlay
 - live hand tracking
 
 ## Main Controls
 
-### Mouse Mode
+### Mouse Control
 - move: thumb-index midpoint follows the screen position directly, palm facing sa camera
 - left click: thumb + index pinch
 - right click: thumb + middle pinch
@@ -70,8 +70,9 @@ python -m hand_controller --ui-live --tuning .\tuning.testing.json
 - ML `redo`: `Ctrl+Y`
 - note: kapag masyadong side-view ang kamay, binablock ang accidental rule-based press gestures for safety
 
-### Keyboard Mode
-- mode switch: hold thumb + ring pinch
+### Keyboard Overlay
+- show/hide keyboard: hold thumb + ring pinch
+- mouse cursor still follows the hand while the keyboard is visible
 - press key: i-hover ang key, then thumb + index pinch
 - backspace: thumb + middle pinch
 - `ABC` / `123`: lipat ng keyboard page

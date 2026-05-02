@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from ..config.settings import AppConfig
 from ..controllers import (
     KeyboardController,
-    KeyboardModeToggleController,
+    KeyboardOverlayToggleController,
     MouseController,
     execute_actions,
 )
@@ -22,7 +22,7 @@ from ..gestures import (
 )
 from ..ml import MLPrediction, MLPredictor, MLControlAdapter
 from ..ml.labels import ML_LABEL_HOLD
-from ..runtime.state import Mode, RuntimeState
+from ..runtime.state import RuntimeState
 from .diagnostics import log_diagnostic
 from ..vision.hand_selector import HandSelector
 from ..vision.models import SelectedHands, VisionResult
@@ -30,12 +30,6 @@ from ..vision.models import SelectedHands, VisionResult
 
 THUMB_TIP_IDX = 4
 INDEX_TIP_IDX = 8
-MOVEMENT_ANCHOR_IDX = 5
-
-
-def _movement_anchor_norm(hand) -> tuple[float, float]:
-    point = hand.landmark(MOVEMENT_ANCHOR_IDX)
-    return point.x, point.y
 
 
 def _mouse_pointer_norm(hand) -> tuple[float, float]:
@@ -67,7 +61,7 @@ class ControlFrameResult:
     ml_status: str
     ml_available: bool
     ml_reason: str | None
-    mode_toggle_status: str
+    keyboard_toggle_status: str
     drag_active: bool
     pre_hold_right_suppressed: bool
     press_gestures_safe: bool
@@ -90,12 +84,11 @@ class LiveControlEngine:
         self.click_detector = MouseClickDetector(config.mouse_click)
         self.pinch_detector = HandPinchDetector(config.keyboard)
         self.keyboard_controller = KeyboardController(config.keyboard)
-        self.mode_toggle_controller = KeyboardModeToggleController(config.keyboard)
+        self.keyboard_overlay_toggle_controller = KeyboardOverlayToggleController(config.keyboard)
         self.runtime_state = RuntimeState()
         self.selector = HandSelector(config.selector)
         self.ml_predictor, self.ml_reason = MLPredictor.try_create(config.ml)
         self.ml_adapter = MLControlAdapter(config.ml)
-        self._last_mode = self.runtime_state.mode
         self._gesture_feedback_text = ""
         self._gesture_feedback_until = 0.0
         self._press_safety_by_hand: dict[str, bool] = {}
@@ -156,13 +149,13 @@ class LiveControlEngine:
         *,
         actions: list[Action],
         click_status: str | None,
-        mode_toggle_status: str,
+        keyboard_toggle_status: str,
         ml_status: str,
         now: float,
     ) -> str:
         text = ""
-        if "toggled" in mode_toggle_status:
-            text = "Keyboard Mode" if self.runtime_state.mode == Mode.KEYBOARD else "Mouse Mode"
+        if "toggled" in keyboard_toggle_status:
+            text = "Keyboard On" if self.runtime_state.keyboard_visible else "Keyboard Off"
         elif "toggled" in ml_status:
             text = "Control On" if self.runtime_state.control_enabled else "Control Off"
         else:
@@ -177,37 +170,10 @@ class LiveControlEngine:
             return self._gesture_feedback_text
         return ""
 
-    def _handle_mode_transition(self, now: float) -> tuple[list[Action], str | None]:
-        actions: list[Action] = []
-        status: str | None = None
-
-        if self.runtime_state.mode == self._last_mode:
-            return actions, status
-
-        self.click_detector.reset()
-        self.keyboard_controller.reset()
-        mouse_actions, mouse_status = self.mouse_controller.update(
-            pointer_norm=None,
-            control_enabled=self.runtime_state.control_enabled,
-            movement_allowed=False,
-            click_enabled=False,
-            right_click_allowed=False,
-            click_state=MouseClickGestureState(),
-            now=now,
-        )
-        actions.extend(mouse_actions)
-        if mouse_actions:
-            status = mouse_status
-
-        self._last_mode = self.runtime_state.mode
-        return actions, status
-
     def _should_pre_hold_suppress_right_click(self, prediction: MLPrediction) -> bool:
         if not self.config.ml.pre_hold_right_click_suppression:
             return False
         if not prediction.available:
-            return False
-        if self.runtime_state.mode != Mode.MOUSE:
             return False
         if not self.runtime_state.control_enabled or self.runtime_state.hold_active:
             return False
@@ -283,7 +249,7 @@ class LiveControlEngine:
             ml_prediction = MLPrediction(available=False, reason=self.ml_reason)
         ml_update = self.ml_adapter.update(ml_prediction, self.runtime_state, now)
 
-        mode_toggle_update = self.mode_toggle_controller.update(
+        keyboard_toggle_update = self.keyboard_overlay_toggle_controller.update(
             state=self.runtime_state,
             active_hand=active_hand,
             palm_facing=palm_facing,
@@ -291,142 +257,97 @@ class LiveControlEngine:
             now=now,
         )
 
-        if self.runtime_state.mode != Mode.MOUSE:
-            self.runtime_state.hold_active = False
-
-        transition_actions, transition_status = self._handle_mode_transition(now)
-
         click_state = MouseClickGestureState()
         keyboard_update = KeyboardUpdate(
             layout=self.keyboard_controller.layout_for_frame(layout_width, layout_height),
             status="keyboard idle",
         )
-        movement_status = transition_status or "idle"
+        movement_status = "idle"
         movement_enabled = False
         click_freeze = False
         pre_hold_right_suppressed = self._should_pre_hold_suppress_right_click(ml_prediction)
-        action_queue = list(transition_actions)
+        action_queue: list[Action] = []
         action_queue.extend(ml_update.actions)
         feedback_actions = list(ml_update.actions)
         click_feedback_status: str | None = None
 
-        if self.runtime_state.mode == Mode.MOUSE:
-            click_enabled = self.runtime_state.control_enabled and not self.runtime_state.hold_active
-            if click_enabled:
-                click_state = self.click_detector.analyze(
-                    active_hand=active_hand,
-                    frame_width=vision.frame_width,
-                    frame_height=vision.frame_height,
-                    activation_allowed=press_gestures_safe,
-                )
-            else:
-                self.click_detector.reset()
-
-            pointer_norm = _mouse_pointer_norm(active_hand) if active_hand is not None else None
-            movement_enabled = (
-                active_hand is not None
-                and palm_facing
-                and self.runtime_state.control_enabled
-                and not self.runtime_state.hold_active
-            )
-            self.runtime_state.movement_frozen = not movement_enabled
-
-            mouse_actions, mouse_status = self.mouse_controller.update(
-                pointer_norm=pointer_norm,
-                control_enabled=self.runtime_state.control_enabled,
-                movement_allowed=movement_enabled,
-                click_enabled=click_enabled,
-                press_activation_allowed=press_gestures_safe,
-                right_click_allowed=not pre_hold_right_suppressed,
-                click_state=click_state,
+        keyboard_visible = (
+            self.runtime_state.control_enabled
+            and self.runtime_state.keyboard_visible
+            and self.config.keyboard.virtual_keyboard_enabled
+        )
+        if keyboard_visible:
+            keyboard_update = self.keyboard_controller.update(
+                hands=vision.hands,
+                pinch_states=pinch_states,
+                frame_width=layout_width,
+                frame_height=layout_height,
                 now=now,
             )
-            action_queue.extend(mouse_actions)
-            feedback_actions.extend(mouse_actions)
-            movement_status = transition_status or mouse_status
-            click_feedback_status = mouse_status
-            click_freeze = click_enabled and (
-                click_state.right_pressed
-                or (click_state.left_pressed and not self.mouse_controller.state.drag_active)
-            )
+            action_queue.extend(keyboard_update.actions)
+            feedback_actions.extend(keyboard_update.actions)
         else:
-            self.runtime_state.movement_frozen = True
+            keyboard_update = KeyboardUpdate(
+                layout=self.keyboard_controller.layout_for_frame(layout_width, layout_height),
+                status=(
+                    "keyboard disabled"
+                    if not self.config.keyboard.virtual_keyboard_enabled
+                    else "keyboard hidden"
+                    if self.runtime_state.control_enabled
+                    else "keyboard control off"
+                ),
+            )
 
-            if self.runtime_state.control_enabled and self.config.keyboard.virtual_keyboard_enabled:
-                keyboard_update = self.keyboard_controller.update(
-                    hands=vision.hands,
-                    pinch_states=pinch_states,
-                    frame_width=layout_width,
-                    frame_height=layout_height,
-                    now=now,
-                )
-                action_queue.extend(keyboard_update.actions)
-                feedback_actions.extend(keyboard_update.actions)
-            else:
-                keyboard_update = KeyboardUpdate(
-                    layout=self.keyboard_controller.layout_for_frame(layout_width, layout_height),
-                    status="keyboard disabled" if not self.config.keyboard.virtual_keyboard_enabled else "keyboard control off",
-                )
-
-            active_keyboard_hover = _hovered_keyboard_label(
+        active_keyboard_hover = (
+            _hovered_keyboard_label(
                 keyboard_update,
                 active_hand.label if active_hand is not None else None,
             )
-            keyboard_hybrid_enabled = (
-                self.runtime_state.control_enabled
-                and self.config.keyboard.virtual_keyboard_enabled
-                and active_hand is not None
+            if keyboard_visible
+            else None
+        )
+        click_enabled = (
+            self.runtime_state.control_enabled
+            and not self.runtime_state.hold_active
+            and active_keyboard_hover is None
+        )
+        if click_enabled:
+            click_state = self.click_detector.analyze(
+                active_hand=active_hand,
+                frame_width=vision.frame_width,
+                frame_height=vision.frame_height,
+                activation_allowed=press_gestures_safe,
             )
-            keyboard_mouse_movement_allowed = (
-                keyboard_hybrid_enabled
-                and ml_update.stable_label == ML_LABEL_HOLD
-            )
-            keyboard_mouse_click_enabled = (
-                keyboard_hybrid_enabled
-                and active_keyboard_hover is None
-                and not keyboard_mouse_movement_allowed
-            )
+        else:
+            self.click_detector.reset()
 
-            if keyboard_mouse_click_enabled:
-                click_state = self.click_detector.analyze(
-                    active_hand=active_hand,
-                    frame_width=vision.frame_width,
-                    frame_height=vision.frame_height,
-                    activation_allowed=press_gestures_safe,
-                )
-            else:
-                self.click_detector.reset()
+        pointer_norm = _mouse_pointer_norm(active_hand) if active_hand is not None else None
+        movement_enabled = (
+            active_hand is not None
+            and palm_facing
+            and self.runtime_state.control_enabled
+            and not self.runtime_state.hold_active
+        )
+        self.runtime_state.movement_frozen = not movement_enabled
 
-            pointer_norm = (
-                _movement_anchor_norm(active_hand)
-                if active_hand is not None and (keyboard_mouse_movement_allowed or keyboard_mouse_click_enabled)
-                else None
-            )
-            mouse_actions, mouse_status = self.mouse_controller.update(
-                pointer_norm=pointer_norm,
-                control_enabled=self.runtime_state.control_enabled,
-                movement_allowed=keyboard_mouse_movement_allowed,
-                click_enabled=keyboard_mouse_click_enabled,
-                press_activation_allowed=press_gestures_safe,
-                right_click_allowed=True,
-                click_state=click_state,
-                now=now,
-            )
-            action_queue.extend(mouse_actions)
-            feedback_actions.extend(mouse_actions)
-            movement_enabled = keyboard_mouse_movement_allowed
-            self.runtime_state.movement_frozen = not movement_enabled
-            click_feedback_status = mouse_status
-            click_freeze = keyboard_mouse_click_enabled and (
-                click_state.right_pressed
-                or (click_state.left_pressed and not self.mouse_controller.state.drag_active)
-            )
-            if transition_status is not None:
-                movement_status = transition_status
-            elif keyboard_mouse_movement_allowed or mouse_actions:
-                movement_status = f"keyboard hybrid | {mouse_status}"
-            else:
-                movement_status = "keyboard mode"
+        mouse_actions, mouse_status = self.mouse_controller.update(
+            pointer_norm=pointer_norm,
+            control_enabled=self.runtime_state.control_enabled,
+            movement_allowed=movement_enabled,
+            click_enabled=click_enabled,
+            press_activation_allowed=press_gestures_safe,
+            right_click_allowed=not pre_hold_right_suppressed,
+            click_state=click_state,
+            now=now,
+        )
+        action_queue.extend(mouse_actions)
+        feedback_actions.extend(mouse_actions)
+        movement_status = f"keyboard overlay | {mouse_status}" if keyboard_visible else mouse_status
+        click_feedback_status = mouse_status
+        click_freeze = click_enabled and (
+            click_state.right_pressed
+            or (click_state.left_pressed and not self.mouse_controller.state.drag_active)
+        )
 
         execute_actions(action_queue)
 
@@ -474,7 +395,7 @@ class LiveControlEngine:
         gesture_command_text = self._gesture_feedback(
             actions=feedback_actions,
             click_status=click_feedback_status,
-            mode_toggle_status=mode_toggle_update.status,
+            keyboard_toggle_status=keyboard_toggle_update.status,
             ml_status=ml_update.status,
             now=now,
         )
@@ -492,7 +413,7 @@ class LiveControlEngine:
             ml_status=ml_update.status,
             ml_available=self.ml_predictor is not None,
             ml_reason=self.ml_reason,
-            mode_toggle_status=mode_toggle_update.status,
+            keyboard_toggle_status=keyboard_toggle_update.status,
             drag_active=self.mouse_controller.state.drag_active,
             pre_hold_right_suppressed=pre_hold_right_suppressed,
             press_gestures_safe=press_gestures_safe,

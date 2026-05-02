@@ -69,17 +69,17 @@ Exit criteria:
 Exit criteria:
 - The user can turn control off and back on from the camera.
 
-## Phase 8: Keyboard Mode
+## Phase 8: Keyboard Overlay
 - Rule-based keyboard toggle.
 - Keyboard overlay and key input logic.
 
 Exit criteria:
-- Keyboard mode is usable with one hand.
+- Keyboard overlay is usable with one hand.
 
 ## Phase 9: UI
 - Start / stop.
 - Status.
-- Mode.
+- Keyboard visibility.
 - Control enabled / disabled.
 - Optional preview and overlay.
 
@@ -123,11 +123,10 @@ Recent hardening already added after the original phase sequence:
 - separate draggable/resizable selfie preview window
 - dockable quick toolbar for common runtime toggles
 - keyboard thumb-index midpoint pointer experiment with visible line/dot guidance
-- keyboard-mode quick mouse bridge: closed fist moves the mouse while held, outside-keyboard pinches can click, and hovered keys keep keyboard priority
-- keyboard dim cue while the quick mouse bridge is active
-- mouse mode absolute movement: cursor follows the thumb-index midpoint screen position directly
+- keyboard overlay model: mouse control remains active while the keyboard is visible, outside-keyboard pinches can click, and hovered keys keep keyboard priority
+- mouse control absolute movement: cursor follows the thumb-index midpoint screen position directly
 
 Current recommended next step:
 - validate keyboard UX in real use before adding larger keyboard mechanics
-- specifically test mouse absolute aiming, midpoint aiming, closed-fist mouse movement, outside-keyboard click routing, and the keyboard dim cue
+- specifically test mouse absolute aiming, midpoint aiming, movement while the keyboard overlay is visible, and outside-keyboard click routing
 - avoid restarting old phases; the baseline phase sequence is complete

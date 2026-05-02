@@ -8,7 +8,7 @@ from ..controllers.keyboard_controller import KeyboardUpdate
 from ..gestures import MouseClickGestureState, is_palm_facing_thumb_pinky
 from ..ml import MLPrediction
 from ..runtime.control_engine import LiveControlEngine
-from ..runtime.state import Mode, RuntimeState
+from ..runtime.state import RuntimeState
 from ..vision.camera import Camera
 from ..vision.hand_tracker import HandTracker
 from ..vision.models import DetectedHand, SelectedHands, VisionResult
@@ -169,7 +169,7 @@ def _draw_control_smoke(
     ml_status: str,
     ml_available: bool,
     ml_reason: str | None,
-    mode_toggle_status: str,
+    keyboard_toggle_status: str,
     keyboard_update: KeyboardUpdate,
     pre_hold_right_suppressed: bool,
     press_gestures_safe: bool,
@@ -212,7 +212,7 @@ def _draw_control_smoke(
             cv2.LINE_AA,
         )
 
-    if runtime_state.mode == Mode.MOUSE and selected.primary is not None:
+    if selected.primary is not None:
         pointer_x, pointer_y, thumb_x, thumb_y, index_x, index_y = _mouse_pointer_px(selected.primary, width, height)
         cv2.line(frame_bgr, (thumb_x, thumb_y), (index_x, index_y), (255, 255, 255), 1, cv2.LINE_AA)
         cv2.circle(frame_bgr, (pointer_x, pointer_y), 10, (255, 255, 0), 2)
@@ -227,7 +227,7 @@ def _draw_control_smoke(
             cv2.LINE_AA,
         )
 
-    if runtime_state.control_enabled and runtime_state.mode == Mode.KEYBOARD:
+    if runtime_state.control_enabled and runtime_state.keyboard_visible:
         _draw_keyboard_overlay(
             frame_bgr,
             keyboard_update=keyboard_update,
@@ -254,31 +254,24 @@ def _draw_control_smoke(
     common_parts = [
         f"hands={len(vision.hands)}",
         f"active={selected.primary.label if selected.primary else '-'}",
-        f"mode={runtime_state.mode.value}",
+        f"keyboard={'on' if runtime_state.keyboard_visible else 'off'}",
         f"control={'on' if runtime_state.control_enabled else 'off'}",
     ]
-    if runtime_state.mode == Mode.MOUSE:
-        status_parts = [
-            *common_parts,
-            f"hold={'yes' if runtime_state.hold_active else 'no'}",
-            f"clicks={'on' if runtime_state.control_enabled and not runtime_state.hold_active else 'off'}",
-            f"presssafe={'yes' if press_gestures_safe else 'no'}",
-            f"prehold_r={'on' if pre_hold_right_suppressed else 'off'}",
-            f"movement={'on' if movement_enabled else 'off'}",
-            f"freeze={'yes' if click_freeze else 'no'}",
-            f"drag={'yes' if drag_active else 'no'}",
-            movement_status,
-            mode_toggle_status,
-            "press q to quit",
-        ]
-    else:
-        status_parts = [
-            *common_parts,
-            f"shift={'on' if keyboard_update.shift_armed else 'off'}",
-            keyboard_update.status,
-            mode_toggle_status,
-            "press q to quit",
-        ]
+    status_parts = [
+        *common_parts,
+        f"hold={'yes' if runtime_state.hold_active else 'no'}",
+        f"clicks={'on' if runtime_state.control_enabled and not runtime_state.hold_active else 'off'}",
+        f"presssafe={'yes' if press_gestures_safe else 'no'}",
+        f"prehold_r={'on' if pre_hold_right_suppressed else 'off'}",
+        f"movement={'on' if movement_enabled else 'off'}",
+        f"freeze={'yes' if click_freeze else 'no'}",
+        f"drag={'yes' if drag_active else 'no'}",
+        f"shift={'on' if keyboard_update.shift_armed else 'off'}",
+        keyboard_update.status,
+        movement_status,
+        keyboard_toggle_status,
+        "press q to quit",
+    ]
 
     next_y = _draw_wrapped_text(
         frame_bgr,
@@ -387,7 +380,7 @@ def run_mouse_smoke(config: AppConfig) -> None:
                 ml_status=frame_result.ml_status,
                 ml_available=frame_result.ml_available,
                 ml_reason=frame_result.ml_reason,
-                mode_toggle_status=frame_result.mode_toggle_status,
+                keyboard_toggle_status=frame_result.keyboard_toggle_status,
                 keyboard_update=frame_result.keyboard_update,
                 pre_hold_right_suppressed=frame_result.pre_hold_right_suppressed,
                 press_gestures_safe=frame_result.press_gestures_safe,

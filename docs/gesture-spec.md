@@ -4,7 +4,7 @@ This document freezes the meaning of each gesture before implementation starts.
 
 ## System states
 - `control_enabled`: when `False`, recognition still runs, but control actions are blocked.
-- `mode`: `mouse` or `keyboard`.
+- `keyboard_visible`: when `True`, the on-screen keyboard is shown as an overlay on top of the normal mouse controller.
 - `movement_enabled`: mouse movement is allowed only when all required gates pass.
 - `press_gestures_safe`: shared safety gate for rule-based press-like gestures.
 
@@ -18,11 +18,9 @@ This document freezes the meaning of each gesture before implementation starts.
 
 ### `hold`
 - Physical pose: closed fist.
-- Runtime meaning in mouse mode: safety freeze.
-- Mouse-mode runtime action: mouse movement off and mouse clicking off.
-- Runtime meaning in keyboard mode: quick mouse-control bridge while held.
-- Keyboard-mode runtime action: mouse movement on while held, mouse clicking blocked while movement is active.
-- Important note: this acts as a safety lock in mouse mode and a deliberate temporary mouse-movement bridge in keyboard mode.
+- Runtime meaning: safety freeze.
+- Runtime action: mouse movement off and mouse clicking off.
+- Important note: the keyboard overlay does not change this; closed fist is no longer required to move the mouse while the keyboard is visible.
 - Removed meaning: this no longer triggers Alt+Tab.
 
 ### `toggle`
@@ -35,12 +33,12 @@ This document freezes the meaning of each gesture before implementation starts.
 ### `undo`
 - Physical pose: two-finger pose from the original MLP dataset.
 - Runtime action: `Ctrl+Z`.
-- Scope for v1: mouse mode only.
+- Scope for v1: active when control is enabled.
 
 ### `redo`
 - Physical pose: second two-finger pose from the original MLP dataset.
 - Runtime action: `Ctrl+Y`.
-- Scope for v1: mouse mode only.
+- Scope for v1: active when control is enabled.
 
 ### Ignored MLP labels
 - `left_click`
@@ -55,9 +53,9 @@ These labels may still be predicted by the existing model, but they will not dri
 - If palm is not facing the camera, mouse movement is disabled.
 
 ### Mouse pointer
-- Mouse mode uses the midpoint between thumb tip and index tip as the cursor target.
+- Mouse control uses the midpoint between thumb tip and index tip as the cursor target.
 - The target maps directly to screen coordinates, matching the keyboard pointer behavior.
-- Mouse mode draws a thin split thumb-index line for visual aiming, with a clear gap around the cursor midpoint and no midpoint dot.
+- Mouse control draws a thin split thumb-index line for visual aiming, with a clear gap around the cursor midpoint and no midpoint dot.
 - Movement can still be smoothed and gated to reduce tiny tracking jitter.
 
 ### Press safety gate
@@ -98,12 +96,12 @@ These labels may still be predicted by the existing model, but they will not dri
 
 ### Keyboard toggle
 - Physical pose: thumb-ring hold.
-- Runtime action: toggle `mode` between `mouse` and `keyboard`.
+- Runtime action: toggle `keyboard_visible`.
 - This replaces the two-hand keyboard activation logic from codebase 2.
 - Safety note: it must pass both the palm-facing rule and the shared press-safety gate.
 
-### Keyboard input
-- Keyboard mode uses the cleaner codebase 1 behavior:
+### Keyboard overlay input
+- The keyboard is an on-screen tool layered on top of normal mouse control:
   - pointer hovers over a key
   - current pointer experiment uses the midpoint between thumb tip and index tip
   - thumb-index pinch confirms a key press
@@ -112,11 +110,10 @@ These labels may still be predicted by the existing model, but they will not dri
 - The overlay renders a thin thumb-index line and a midpoint dot; the midpoint dot is the actual keyboard pointer.
 - Safety note: these pinches are blocked when `press_gestures_safe` fails.
 
-## Mouse mode rules
-- Mouse mode only produces actions when `control_enabled` is `True`.
+## Mouse control rules
+- Mouse control only produces actions when `control_enabled` is `True`.
 - Mouse movement requires:
   - `control_enabled == True`
-  - `mode == mouse`
   - palm-facing gate passes
   - `hold` is not active
 - Cursor target is absolute screen position from the thumb-index midpoint.
@@ -125,22 +122,16 @@ These labels may still be predicted by the existing model, but they will not dri
 - During a left pinch, movement aim-locks to the current cursor target until release or drag start.
 - During a right pinch, movement aim-locks to the current cursor target until the pinch is released.
 - Aim-lock preserves the motion filter anchor instead of repeatedly resetting it while the pinch is held.
-- `undo` and `redo` are ML-owned one-shot commands in mouse mode.
+- `undo` and `redo` are ML-owned one-shot commands.
 
-## Keyboard mode rules
-- Keyboard toggle is rule-based.
-- Keyboard interaction logic comes from the codebase 1 design, not from the codebase 2 two-hand idle logic.
-- Closed-fist `hold` has a narrow special meaning in keyboard mode: it enables quick mouse movement while held.
-- While keyboard-mode hold movement is active:
-  - keyboard keys visually dim
-  - mouse clicking is blocked
-  - the existing mouse movement controller handles cursor movement
-- When not holding closed fist, outside-keyboard thumb-index pinch routes through the existing mouse left-click / drag path.
-- When not holding closed fist, outside-keyboard thumb-middle pinch routes through the existing mouse right-click path.
-- If the pointer is hovering a keyboard key, keyboard actions take priority over outside-keyboard mouse clicks.
-- `undo` and `redo` are ignored in keyboard mode for v1.
-- If `control_enabled` becomes `False` while keyboard mode was active, the keyboard overlay hides immediately.
-- Re-enabling control restores the previous mode instead of forcibly switching back to mouse mode.
+## Keyboard overlay rules
+- Keyboard visibility is toggled by the rule-based thumb-ring gesture.
+- The mouse controller remains active while the keyboard is visible.
+- No closed-fist bridge is required to move the mouse while the keyboard is visible.
+- If the active pointer is hovering a keyboard key, keyboard actions take priority and mouse clicks are blocked for that frame.
+- Outside the keyboard, thumb-index and thumb-middle pinches route through the normal mouse click / drag path.
+- If `control_enabled` becomes `False` while the keyboard was visible, the overlay hides visually.
+- Re-enabling control restores the keyboard overlay if it was visible before control was turned off.
 
 ## Removed or rejected behaviors
 - No Alt+Tab action from `hold`.

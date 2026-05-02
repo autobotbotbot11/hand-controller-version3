@@ -13,7 +13,7 @@ def build_boot_message(config: AppConfig, state: RuntimeState) -> str:
             "Hand Controller Rewrite",
             f"python_target={config.python_version}",
             f"camera={config.camera.width}x{config.camera.height}@{config.camera.index}",
-            f"mode={state.mode.value}",
+            f"keyboard_visible={state.keyboard_visible}",
             f"control_enabled={state.control_enabled}",
             f"tuning={config.tuning_path or 'defaults'}",
             f"ml_enabled={config.ml.enabled}",

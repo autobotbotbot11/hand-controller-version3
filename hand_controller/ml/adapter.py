@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from ..config.settings import MLConfig
 from ..controllers.actions import Action, Hotkey
-from ..runtime.state import Mode, RuntimeState
+from ..runtime.state import RuntimeState
 from .labels import ML_LABEL_HOLD, ML_LABEL_IDLE, ML_LABEL_REDO, ML_LABEL_TOGGLE, ML_LABEL_UNDO
 from .predictor import MLPrediction
 
@@ -75,7 +75,7 @@ class MLControlAdapter:
             self._toggle_started_at = None
             self._toggle_fired_for_hold = False
 
-        if state.control_enabled and state.mode == Mode.MOUSE:
+        if state.control_enabled:
             if (
                 stable_label == ML_LABEL_UNDO
                 and self._prev_stable_label != ML_LABEL_UNDO
@@ -91,7 +91,7 @@ class MLControlAdapter:
                 actions.append(Hotkey(keys=("ctrl", "y")))
                 self._last_shortcut_time = now
 
-        hold_active = state.control_enabled and state.mode == Mode.MOUSE and stable_label == ML_LABEL_HOLD
+        hold_active = state.control_enabled and stable_label == ML_LABEL_HOLD
 
         state.latest_ml_label = stable_label
         state.hold_active = hold_active
