@@ -177,11 +177,9 @@ class MouseController:
                 )
                 and (now - self.state.last_left_click) >= self.click_settings.click_cooldown
             ):
-                actions.append(DoubleClick())
-                self.state.last_left_click = now
-                self.state.left_press_started = None
                 self.state.left_second_tap_active = True
-                status = "Mouse | double click"
+                self.state.left_press_started = now
+                status = "Mouse | double click ready"
             else:
                 self.state.left_press_started = now
                 self.state.left_second_tap_active = False
@@ -190,11 +188,12 @@ class MouseController:
             click_state.left_pressed
             and self.state.left_press_started is not None
             and not self.state.drag_active
-            and not self.state.left_second_tap_active
             and (now - self.state.left_press_started) >= self.click_settings.left_hold_drag_seconds
         ):
             actions.append(MouseDown(button="left"))
             self.state.drag_active = True
+            self.state.left_second_tap_active = False
+            self.state.last_left_click = 0.0
             status = "Mouse | drag start"
 
         if click_state.left_up and (
@@ -209,7 +208,9 @@ class MouseController:
                 self.state.drag_active = False
                 status = "Mouse | drag release"
             elif self.state.left_second_tap_active:
-                self.state.left_second_tap_active = False
+                actions.append(DoubleClick())
+                self.state.last_left_click = now
+                status = "Mouse | double click"
             elif press_duration < self.click_settings.left_hold_drag_seconds:
                 if (now - self.state.last_left_click) >= self.click_settings.click_cooldown:
                     actions.append(Click(button="left"))

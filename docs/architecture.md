@@ -52,6 +52,7 @@ Current movement model:
 - click pinches aim-lock to the current cursor target before release or drag start
 - aim-lock preserves the motion filter anchor instead of repeatedly resetting it while the pinch is held
 - drag resumes movement after the left-button hold starts
+- second-tap thumb-index hold can become drag instead of double-click if it crosses the drag threshold
 - fast action execution with no extra per-action pause
 
 ## Control model

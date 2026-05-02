@@ -50,10 +50,10 @@ These decisions are intentional and should not be changed casually.
 ### Click ownership
 - Final behavior for mouse clicks is rule-based.
 - `left click` = quick thumb-index pinch-and-release
-- `double click` = first left tap releases normally, then the second quick pinch emits an explicit OS double-click action
-- `double_click_assist_window` limits how long that early second-click assist stays active so drag is less likely to be stolen
+- `double click` = first left tap releases normally, then the second quick pinch emits an explicit OS double-click action on release
+- `double_click_assist_window` limits how long the second-tap path stays eligible
 - `right click` = thumb-middle pinch down
-- `drag` = thumb-index pinch held long enough to trigger left-button hold
+- `drag` = thumb-index pinch held long enough to trigger left-button hold, including second-tap hold after a first click
 - Existing MLP labels `left_click` and `right_click` may still be predicted, but they must not drive behavior in the rewrite.
 
 ### Keyboard
@@ -175,6 +175,7 @@ Completed:
   - mouse mode draws a split thumb-index line only, without a pointer dot, to avoid visually covering native desktop hover feedback near the cursor
   - explicit OS double-click uses a shorter click interval to reduce perceived lag during the second tap
   - mouse click pinches now use aim-lock instead of repeatedly resetting the motion filter while the pinch is held
+  - second-tap thumb-index pinch now waits for release vs hold: quick release emits explicit double-click; hold past the drag threshold starts drag
 - Selfie / quick-tools UX:
   - the selfie camera preview is now a separate frameless always-on-top `SelfieWindow`, not drawn inside the transparent keyboard overlay
   - the selfie preview is draggable, resizable from all four corners, keeps a 4:3 aspect ratio, has hover-only controls, and persists custom position/size through tuning updates

@@ -83,7 +83,8 @@ These labels may still be predicted by the existing model, but they will not dri
 
 ### Double click
 - Meaning: two quick left tap cycles within the configured interval.
-- Runtime action: first click happens on the first release, and the second quick pinch emits an explicit OS double-click action.
+- Runtime action: first click happens on the first release, and a second quick pinch emits an explicit OS double-click action on release.
+- If the second pinch is held past the drag threshold, it becomes drag instead of double-click.
 
 ### Right click
 - Physical pose: thumb-middle pinch.
@@ -93,6 +94,7 @@ These labels may still be predicted by the existing model, but they will not dri
 - Physical pose: thumb-index pinch held longer than the drag threshold.
 - Runtime action: start left-button hold and allow drag movement.
 - Release action: releasing the pinch ends the drag.
+- After a first left tap, holding the second thumb-index pinch past the same drag threshold starts drag instead of double-click.
 
 ### Keyboard toggle
 - Physical pose: thumb-ring hold.
