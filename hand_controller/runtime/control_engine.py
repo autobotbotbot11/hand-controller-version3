@@ -34,6 +34,7 @@ INDEX_TIP_IDX = 8
 MAPPING_RESET_COOLDOWN_SECONDS = 0.4
 MAPPING_RESET_FEEDBACK = "Cursor Reset"
 CLUTCH_REPOSITION_HINT = "Thumb + pinky: reset cursor"
+HELPER_HINT_SECONDS = 5.0
 
 
 def _mouse_pointer_norm(hand) -> tuple[float, float]:
@@ -71,6 +72,7 @@ class ControlFrameResult:
     press_gestures_safe: bool
     press_safety_status: str
     gesture_command_text: str
+    helper_hint_text: str
 
 
 class LiveControlEngine:
@@ -95,6 +97,8 @@ class LiveControlEngine:
         self.ml_adapter = MLControlAdapter(config.ml)
         self._gesture_feedback_text = ""
         self._gesture_feedback_until = 0.0
+        self._helper_hint_text = ""
+        self._helper_hint_until = 0.0
         self._press_safety_by_hand: dict[str, bool] = {}
         self._diag_last_ml_label: str | None = None
         self._diag_last_hold_active: bool | None = None
@@ -116,6 +120,21 @@ class LiveControlEngine:
             return
         self._gesture_feedback_text = text
         self._gesture_feedback_until = now + self.config.keyboard.gesture_command_hold_seconds
+
+    def _set_helper_hint(self, text: str, now: float) -> None:
+        if not text:
+            return
+        self._helper_hint_text = text
+        self._helper_hint_until = now + HELPER_HINT_SECONDS
+
+    def _clear_helper_hint(self) -> None:
+        self._helper_hint_text = ""
+        self._helper_hint_until = 0.0
+
+    def _helper_hint(self, now: float) -> str:
+        if now <= self._helper_hint_until:
+            return self._helper_hint_text
+        return ""
 
     def _label_for_action(self, action: Action, *, click_status: str | None = None) -> str:
         if isinstance(action, Click):
@@ -279,6 +298,8 @@ class LiveControlEngine:
         else:
             ml_prediction = MLPrediction(available=False, reason=self.ml_reason)
         ml_update = self.ml_adapter.update(ml_prediction, self.runtime_state, now)
+        if not self.runtime_state.control_enabled:
+            self._clear_helper_hint()
 
         keyboard_toggle_update = self.keyboard_overlay_toggle_controller.update(
             state=self.runtime_state,
@@ -344,6 +365,7 @@ class LiveControlEngine:
         )
         if reset_mapping:
             self._set_gesture_feedback(MAPPING_RESET_FEEDBACK, now)
+            self._clear_helper_hint()
 
         click_enabled = (
             self.runtime_state.control_enabled
@@ -387,7 +409,7 @@ class LiveControlEngine:
         movement_status = f"keyboard overlay | {mouse_status}" if keyboard_visible else mouse_status
         click_feedback_status = mouse_status
         if "hand repositioned" in mouse_status:
-            self._set_gesture_feedback(CLUTCH_REPOSITION_HINT, now)
+            self._set_helper_hint(CLUTCH_REPOSITION_HINT, now)
         click_freeze = click_enabled and (
             click_state.right_pressed
             or (click_state.left_pressed and not self.mouse_controller.state.drag_active)
@@ -443,6 +465,7 @@ class LiveControlEngine:
             ml_status=ml_update.status,
             now=now,
         )
+        helper_hint_text = self._helper_hint(now)
 
         return ControlFrameResult(
             runtime_state=self.runtime_state,
@@ -463,4 +486,5 @@ class LiveControlEngine:
             press_gestures_safe=press_gestures_safe,
             press_safety_status=press_safety_status,
             gesture_command_text=gesture_command_text,
+            helper_hint_text=helper_hint_text,
         )

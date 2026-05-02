@@ -55,6 +55,7 @@ class OverlayWindow(QWidget):
             self._draw_skeleton(painter)
         if self.settings.show_pointers:
             self._draw_pointers(painter)
+        self._draw_helper_hint(painter)
         self._draw_gesture_command(painter)
 
     def _draw_keyboard(self, painter: QPainter) -> None:
@@ -174,3 +175,30 @@ class OverlayWindow(QWidget):
         painter.drawRoundedRect(rect, 14, 14)
         painter.setPen(QColor(255, 255, 255, 235))
         painter.drawText(rect, Qt.AlignCenter, text)
+
+    def _draw_helper_hint(self, painter: QPainter) -> None:
+        if not self.payload.helper_hint_text:
+            return
+
+        painter.setFont(QFont("Arial", max(13, self.settings.status_font_px), QFont.Normal))
+        metrics = painter.fontMetrics()
+        text = self.payload.helper_hint_text
+        max_width = max(160, self.width() - 48)
+        display_text = metrics.elidedText(text, Qt.ElideRight, max_width - 28)
+        text_width = metrics.horizontalAdvance(display_text)
+        width = text_width + 28
+        height = metrics.height() + 14
+        x = (self.width() - width) // 2
+
+        if self.payload.keyboard_visible and self.payload.keyboard_keys:
+            keyboard_top = min(key.y1 for key in self.payload.keyboard_keys)
+            y = max(56, keyboard_top - height - 14)
+        else:
+            y = self.height() - height - 96
+
+        rect = QRect(x, y, width, height)
+        painter.setBrush(QBrush(QColor(0, 0, 0, 125)))
+        painter.setPen(QPen(QColor(255, 255, 255, 55), 1))
+        painter.drawRoundedRect(rect, 10, 10)
+        painter.setPen(QColor(255, 255, 255, 215))
+        painter.drawText(rect, Qt.AlignCenter, display_text)
