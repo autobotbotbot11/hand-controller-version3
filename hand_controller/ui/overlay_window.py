@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 from PyQt5.QtCore import QRect, Qt, pyqtSlot
 from PyQt5.QtGui import QBrush, QColor, QFont, QPainter, QPen
 from PyQt5.QtWidgets import QApplication, QWidget
@@ -83,6 +85,34 @@ class OverlayWindow(QWidget):
         for x1, y1, x2, y2 in self.payload.skeleton_lines:
             painter.drawLine(x1, y1, x2, y2)
 
+    def _draw_line_with_midpoint_gap(
+        self,
+        painter: QPainter,
+        *,
+        x1: int,
+        y1: int,
+        x2: int,
+        y2: int,
+        midpoint_x: int,
+        midpoint_y: int,
+        half_gap_px: int,
+    ) -> None:
+        dx = x2 - x1
+        dy = y2 - y1
+        length = math.hypot(dx, dy)
+        if length <= half_gap_px * 2:
+            return
+
+        unit_x = dx / length
+        unit_y = dy / length
+        left_x = int(round(midpoint_x - unit_x * half_gap_px))
+        left_y = int(round(midpoint_y - unit_y * half_gap_px))
+        right_x = int(round(midpoint_x + unit_x * half_gap_px))
+        right_y = int(round(midpoint_y + unit_y * half_gap_px))
+
+        painter.drawLine(x1, y1, left_x, left_y)
+        painter.drawLine(right_x, right_y, x2, y2)
+
     def _draw_pointers(self, painter: QPainter) -> None:
         radius = self.settings.pointer_radius_px
         painter.setFont(QFont("Arial", self.settings.pointer_label_font_px, QFont.Bold))
@@ -94,7 +124,22 @@ class OverlayWindow(QWidget):
                 and pointer.index_y is not None
             ):
                 painter.setPen(QPen(QColor(255, 255, 255, 185), 1))
-                painter.drawLine(pointer.thumb_x, pointer.thumb_y, pointer.index_x, pointer.index_y)
+                if pointer.show_dot:
+                    painter.drawLine(pointer.thumb_x, pointer.thumb_y, pointer.index_x, pointer.index_y)
+                else:
+                    self._draw_line_with_midpoint_gap(
+                        painter,
+                        x1=pointer.thumb_x,
+                        y1=pointer.thumb_y,
+                        x2=pointer.index_x,
+                        y2=pointer.index_y,
+                        midpoint_x=pointer.x,
+                        midpoint_y=pointer.y,
+                        half_gap_px=max(24, radius * 3),
+                    )
+
+            if not pointer.show_dot:
+                continue
 
             painter.setPen(QPen(QColor(0, 255, 255, 235), self.settings.pointer_stroke_px))
             painter.setBrush(QBrush(QColor(0, 255, 255, 155)))

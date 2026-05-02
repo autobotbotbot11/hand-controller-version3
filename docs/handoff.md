@@ -171,6 +171,9 @@ Completed:
   - the overlay draws the thumb-index line and midpoint dot so the user can judge the behavior clearly
   - keyboard mode has a quick mouse-control bridge: closed fist moves the mouse while held, outside-keyboard pinches can click, and hovered keyboard keys keep keyboard priority
   - the keyboard dims while the quick mouse-control bridge is actively moving the mouse
+- Mouse UX / click polish:
+  - mouse mode draws a split thumb-index line only, without a pointer dot, to avoid visually covering native desktop hover feedback near the cursor
+  - explicit OS double-click uses a shorter click interval to reduce perceived lag during the second tap
 - Selfie / quick-tools UX:
   - the selfie camera preview is now a separate frameless always-on-top `SelfieWindow`, not drawn inside the transparent keyboard overlay
   - the selfie preview is draggable, resizable from all four corners, keeps a 4:3 aspect ratio, has hover-only controls, and persists custom position/size through tuning updates

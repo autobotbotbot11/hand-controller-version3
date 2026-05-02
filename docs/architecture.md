@@ -96,6 +96,7 @@ Current movement model:
 - The quick toolbar can dock to left, right, top, or bottom and persists its edge/offset.
 - The overlay payload includes a keyboard dim state used when keyboard-mode quick mouse movement is active.
 - The current keyboard pointer experiment uses a thumb-index midpoint, with a visible thumb-index line and midpoint dot.
+- Mouse mode draws a split thumb-index line only, without a pointer dot, to avoid visually covering native desktop hover feedback near the cursor.
 
 ## Initial scope
 - Mouse mode

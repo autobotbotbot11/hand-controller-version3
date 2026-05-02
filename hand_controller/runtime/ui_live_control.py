@@ -26,6 +26,8 @@ if TYPE_CHECKING:
 
 _UI_LIVE_WARMUP_LOCK = threading.Lock()
 _UI_LIVE_WARMUP_STARTED = False
+_THUMB_TIP_IDX = 4
+_INDEX_TIP_IDX = 8
 
 
 def _screen_xy(x_norm: float, y_norm: float, screen_width: int, screen_height: int) -> tuple[int, int]:
@@ -67,13 +69,44 @@ def _build_pointer_payload(keyboard_update: KeyboardUpdate) -> tuple[OverlayPoin
         OverlayPointer(
             x=pointer.x,
             y=pointer.y,
-            hand_label="L" if pointer.hand_label == "Left" else "R" if pointer.hand_label == "Right" else pointer.hand_label,
+            hand_label=_overlay_hand_label(pointer.hand_label),
             thumb_x=pointer.thumb_x,
             thumb_y=pointer.thumb_y,
             index_x=pointer.index_x,
             index_y=pointer.index_y,
         )
         for pointer in keyboard_update.pointers
+    )
+
+
+def _overlay_hand_label(label: str) -> str:
+    return "L" if label == "Left" else "R" if label == "Right" else label
+
+
+def _build_mouse_pointer_payload(
+    selected: SelectedHands,
+    screen_width: int,
+    screen_height: int,
+) -> tuple[OverlayPointer, ...]:
+    hand = selected.primary
+    if hand is None:
+        return ()
+
+    thumb = hand.landmark(_THUMB_TIP_IDX)
+    index = hand.landmark(_INDEX_TIP_IDX)
+    thumb_x, thumb_y = _screen_xy(thumb.x, thumb.y, screen_width, screen_height)
+    index_x, index_y = _screen_xy(index.x, index.y, screen_width, screen_height)
+    return (
+        OverlayPointer(
+            x=int(round((thumb_x + index_x) / 2.0)),
+            y=int(round((thumb_y + index_y) / 2.0)),
+            hand_label="",
+            thumb_x=thumb_x,
+            thumb_y=thumb_y,
+            index_x=index_x,
+            index_y=index_y,
+            show_dot=False,
+        ),
     )
 
 
@@ -134,6 +167,7 @@ def _build_overlay_payload(
     *,
     runtime_state: RuntimeState,
     keyboard_update: KeyboardUpdate,
+    mouse_pointers: tuple[OverlayPointer, ...],
     skeleton_lines: tuple[tuple[int, int, int, int], ...],
     selfie_frame,
     mouse_status: str,
@@ -142,6 +176,14 @@ def _build_overlay_payload(
     debug_tags: tuple[str, ...],
 ) -> OverlayPayload:
     keyboard_visible = runtime_state.control_enabled and runtime_state.mode == Mode.KEYBOARD
+    mouse_visible = runtime_state.control_enabled and runtime_state.mode == Mode.MOUSE
+    if keyboard_visible:
+        finger_points = _build_pointer_payload(keyboard_update)
+    elif mouse_visible:
+        finger_points = mouse_pointers
+    else:
+        finger_points = ()
+
     return OverlayPayload(
         mode=runtime_state.mode.value,
         control_enabled=runtime_state.control_enabled,
@@ -149,7 +191,7 @@ def _build_overlay_payload(
         keyboard_dimmed=keyboard_visible and movement_enabled,
         keyboard_keys=_build_keyboard_keys(keyboard_update) if keyboard_visible else (),
         highlight_labels=keyboard_update.highlight_labels if keyboard_visible else frozenset(),
-        finger_points=_build_pointer_payload(keyboard_update) if keyboard_visible else (),
+        finger_points=finger_points,
         skeleton_lines=skeleton_lines,
         mouse_status=mouse_status,
         keyboard_status=keyboard_update.status if keyboard_visible else "",
@@ -204,6 +246,11 @@ def run_ui_live_worker(
                 payload = _build_overlay_payload(
                     runtime_state=frame_result.runtime_state,
                     keyboard_update=frame_result.keyboard_update,
+                    mouse_pointers=_build_mouse_pointer_payload(
+                        frame_result.selected,
+                        screen_width,
+                        screen_height,
+                    ),
                     skeleton_lines=_build_skeleton_lines(frame_result.vision, tracker, screen_width, screen_height),
                     selfie_frame=_build_selfie_frame(
                         frame_bgr,

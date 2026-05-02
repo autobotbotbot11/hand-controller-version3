@@ -32,7 +32,7 @@ def execute_actions(actions: Iterable[Action]) -> None:
         if isinstance(action, MoveTo):
             pyautogui.moveTo(action.x, action.y, _pause=False)
         elif isinstance(action, DoubleClick):
-            pyautogui.click(button=action.button, clicks=2, interval=0.12, _pause=False)
+            pyautogui.click(button=action.button, clicks=2, interval=0.05, _pause=False)
         elif isinstance(action, MouseDown):
             pyautogui.mouseDown(button=action.button, _pause=False)
         elif isinstance(action, MouseUp):

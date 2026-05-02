@@ -21,6 +21,7 @@ class OverlayPointer:
     thumb_y: int | None = None
     index_x: int | None = None
     index_y: int | None = None
+    show_dot: bool = True
 
 
 @dataclass(frozen=True, slots=True)

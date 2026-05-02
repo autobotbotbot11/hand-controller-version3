@@ -57,6 +57,7 @@ These labels may still be predicted by the existing model, but they will not dri
 ### Mouse pointer
 - Mouse mode uses the midpoint between thumb tip and index tip as the cursor target.
 - The target maps directly to screen coordinates, matching the keyboard pointer behavior.
+- Mouse mode draws a thin split thumb-index line for visual aiming, with a clear gap around the cursor midpoint and no midpoint dot.
 - Movement can still be smoothed and gated to reduce tiny tracking jitter.
 
 ### Press safety gate
