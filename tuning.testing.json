@@ -1,0 +1,51 @@
+{
+  "mouse_click": {
+    "left_pinch_threshold_px": 35.0,
+    "left_press_multiplier": 0.72,
+    "left_release_multiplier": 1.02,
+    "right_pinch_threshold_px": 30.0,
+    "right_press_multiplier": 0.88,
+    "right_release_multiplier": 1.12,
+    "click_cooldown": 0.08,
+    "double_click_interval": 1.5,
+    "double_click_assist_window": 0.95,
+    "left_hold_drag_seconds": 0.8
+  },
+  "keyboard": {
+    "height_ratio": 0.3,
+    "side_margin_px": 120,
+    "bottom_margin_px": 100,
+    "key_gap_px": 6,
+    "row_gap_px": 6,
+    "index_pinch_threshold_px": 35.0,
+    "index_press_multiplier": 0.72,
+    "index_release_multiplier": 1.02,
+    "middle_pinch_threshold_px": 46.0,
+    "middle_press_multiplier": 0.88,
+    "middle_release_multiplier": 1.12,
+    "ring_pinch_threshold_px": 42.0,
+    "ring_press_multiplier": 0.84,
+    "ring_release_multiplier": 1.1,
+    "pinky_pinch_threshold_px": 52.0,
+    "pinky_press_multiplier": 0.92,
+    "pinky_release_multiplier": 1.14,
+    "mode_toggle_hold_seconds": 0.0,
+    "mode_toggle_cooldown_seconds": 0.0,
+    "require_palm_facing_for_toggle": true,
+    "selfie_position": "custom",
+    "selfie_custom_x_ratio": 0.004060324825986079,
+    "selfie_custom_y_ratio": 0.028938906752411574,
+    "selfie_width_px": 196,
+    "selfie_height_px": 147,
+    "quick_toolbar_edge": "top",
+    "quick_toolbar_offset_ratio": 0.656392694063927
+  },
+  "ml": {
+    "confirm_frames": 2,
+    "toggle_hold_seconds": 0.45,
+    "toggle_cooldown": 0.8,
+    "shortcut_cooldown": 0.6,
+    "gate_min_p1": 0.42,
+    "gate_min_margin": 0.05
+  }
+}
