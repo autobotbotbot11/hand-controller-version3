@@ -33,10 +33,12 @@ These decisions are intentional and should not be changed casually.
 - It should require a short sustained hold before toggling.
 - Reason: the user must be able to turn control back on using the same gesture while the app is still running.
 
-### Hold safety freeze
+### Hold clutch / safety freeze
 - ML `hold` uses the closed-fist pose.
-- `hold` now means safety freeze.
-- Safety freeze disables mouse movement and mouse clicks.
+- `hold` now means clutch/freeze.
+- While held, it disables mouse movement and mouse clicks.
+- On release, if the hand was repositioned, the cursor target is preserved by applying a temporary mouse-mapping offset.
+- Thumb-pinky pinch clears that offset and instantly returns to direct thumb-index midpoint mapping.
 - The keyboard overlay does not change this; closed fist is no longer a quick mouse-control bridge.
 - Reason: mouse control remains active while the keyboard is visible, so a separate closed-fist bridge is no longer needed.
 
@@ -65,7 +67,7 @@ These decisions are intentional and should not be changed casually.
   - visible pointer guidance: thin line from thumb tip to index tip plus a midpoint dot
   - thumb-index pinch to type hovered key
   - thumb-middle pinch for backspace when hovering the keyboard
-  - thumb-pinky pinch for one-shot Shift
+  - on-screen `SHIFT` key for one-shot Shift
   - outside-keyboard thumb-index pinch routes through the normal mouse left-click / drag path
   - outside-keyboard thumb-middle pinch routes through the normal mouse right-click path
 - Mouse cursor movement continues while the keyboard overlay is visible.
@@ -135,7 +137,7 @@ Completed:
 - Phase 4 validated on the user's machine: stable mouse movement is smooth and usable
 - Phase 5 click/drag refactor code: release-based left tap, easier double-click path, down-triggered right click, hold-to-drag, JSON tuning overrides, and updated `--mouse-smoke`
 - Phase 6 baseline code: MLP predictor, action adapter, fallback artifact lookup to `touch-v15`, and integrated `toggle` / `hold` / `undo` / `redo` in `--mouse-smoke`
-- Phase 8 baseline code: rule-based thumb-ring keyboard overlay toggle, keyboard overlay, pinch-to-type keypresses, backspace gesture, one-shot Shift gesture, and integrated control smoke runner
+- Phase 8 baseline code: rule-based thumb-ring keyboard overlay toggle, keyboard overlay, pinch-to-type keypresses, backspace gesture, one-shot Shift support, and integrated control smoke runner
 - Phase K1 foundation code: `ui/main_window.py`, `ui/overlay_window.py`, `ui/signals.py`, typed overlay payloads, and `--ui-smoke` for validating the Qt overlay architecture
 - Phase K2/K3 baseline code: `runtime/ui_live_control.py` and `--ui-live` now run the real CV worker through the Qt control panel + transparent overlay path
 - Phase K4 baseline code: `controllers/keyboard_controller.py` now builds a data-driven full keyboard layout with a complete practical key set and configurable row/size/width settings
@@ -177,6 +179,7 @@ Completed:
   - explicit OS double-click uses a shorter click interval to reduce perceived lag during the second tap
   - mouse click pinches now use aim-lock instead of repeatedly resetting the motion filter while the pinch is held
   - second-tap thumb-index pinch now waits for release vs hold: quick release emits explicit double-click; hold past the drag threshold starts drag
+  - closed-fist `hold` now works as a clutch for hand repositioning, and thumb-pinky pinch resets the mouse mapping back to direct control
 - Selfie / quick-tools UX:
   - the selfie camera preview is now a separate frameless always-on-top `SelfieWindow`, not drawn inside the transparent keyboard overlay
   - the selfie preview is draggable, resizable from all four corners, keeps a 4:3 aspect ratio, has hover-only controls, and persists custom position/size through tuning updates
@@ -285,7 +288,7 @@ The baseline phases are already implemented. The likely next task is keyboard UX
 - `idle` must not be used as the basis for movement semantics.
 - Keyboard behavior should come from the cleaner `hand_controller` design.
 - `undo` and `redo` are normal mouse-layer commands; the keyboard overlay does not disable them.
-- `hold` is safety freeze; do not reintroduce a keyboard-only quick mouse bridge unless there is a strong UX reason.
+- `hold` is clutch/freeze; do not reintroduce a keyboard-only quick mouse bridge unless there is a strong UX reason.
 - Clicking should stay rule-based even if the MLP predicts click labels.
 - Mouse movement is now absolute screen-space movement from the thumb-index midpoint, not relative hand deltas.
 - Do not remove the shared hand-view press-safety gate unless a better global safety replacement exists.

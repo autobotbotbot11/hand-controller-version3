@@ -42,7 +42,8 @@ It uses:
 - double click
 - drag and drop
 - ML `toggle` on/off
-- ML `hold`
+- ML `hold` clutch/reposition
+- thumb-pinky direct-mapping reset
 - `undo` / `redo`
 - side-view safety
   - rule-based clicks and keyboard pinches should not fire easily when the hand is too side-view
@@ -74,7 +75,8 @@ Use simple notes like this:
 - double click: good / bad
 - drag and drop: good / bad
 - ML toggle: good / bad
-- ML hold: good / bad
+- ML hold clutch/reposition: good / bad
+- thumb-pinky reset: good / bad
 - side-view safety: good / bad
 - keyboard typing: good / bad
 - camera source / refresh: good / bad

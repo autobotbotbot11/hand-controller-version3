@@ -64,7 +64,8 @@ python -m hand_controller --ui-live --tuning .\tuning.testing.json
 - right click: thumb + middle pinch
 - double click: two quick left-click pinches
 - drag: hold the left pinch
-- ML `hold`: safety freeze; hihinto ang movement at clicks
+- ML `hold`: clutch/freeze; hold closed fist to freeze, reposition your hand, then release to keep the cursor in place with a temporary offset
+- reset direct mapping: thumb + pinky pinch; clears the temporary offset so the cursor returns to the actual thumb-index midpoint
 - ML `toggle`: on/off ng control without stopping recognition
 - ML `undo`: `Ctrl+Z`
 - ML `redo`: `Ctrl+Y`
@@ -76,7 +77,7 @@ python -m hand_controller --ui-live --tuning .\tuning.testing.json
 - press key: i-hover ang key, then thumb + index pinch
 - backspace: thumb + middle pinch
 - `ABC` / `123`: lipat ng keyboard page
-- makikita ang `Shift` at `Caps Lock` state sa overlay
+- `Shift` and `Caps Lock`: on-screen keys; makikita ang state nila sa overlay
 
 ## Tuning Files
 - [tuning.testing.json](/C:/Users/acer/school/self-study/programming/projects/computer-vision-mouse-control/hand-controller-rewrite/tuning.testing.json)

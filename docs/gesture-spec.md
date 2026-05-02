@@ -18,8 +18,9 @@ This document freezes the meaning of each gesture before implementation starts.
 
 ### `hold`
 - Physical pose: closed fist.
-- Runtime meaning: safety freeze.
-- Runtime action: mouse movement off and mouse clicking off.
+- Runtime meaning: clutch/freeze for hand repositioning.
+- Runtime action: mouse movement and mouse clicking are frozen while held.
+- Release action: if the hand moved while held, the cursor position is preserved and mouse mapping switches to a temporary offset.
 - Important note: the keyboard overlay does not change this; closed fist is no longer required to move the mouse while the keyboard is visible.
 - Removed meaning: this no longer triggers Alt+Tab.
 
@@ -55,6 +56,8 @@ These labels may still be predicted by the existing model, but they will not dri
 ### Mouse pointer
 - Mouse control uses the midpoint between thumb tip and index tip as the cursor target.
 - The target maps directly to screen coordinates, matching the keyboard pointer behavior.
+- Closed-fist `hold` can temporarily offset this mapping so the user can reposition the hand without moving the cursor.
+- Thumb-pinky pinch resets the mapping back to direct thumb-index midpoint control.
 - Mouse control draws a thin split thumb-index line for visual aiming, with a clear gap around the cursor midpoint and no midpoint dot.
 - Movement can still be smoothed and gated to reduce tiny tracking jitter.
 
@@ -71,7 +74,8 @@ These labels may still be predicted by the existing model, but they will not dri
   - right click
   - drag start
   - keyboard toggle
-  - keyboard tap / backspace / shift-related pinches
+  - keyboard tap / backspace pinches
+  - mapping reset
 - It does not automatically cancel an already active drag.
 - It is intentionally a safety layer only; it does not replace the existing click/toggle logic.
 
@@ -106,7 +110,7 @@ These labels may still be predicted by the existing model, but they will not dri
   - current pointer experiment uses the midpoint between thumb tip and index tip
   - thumb-index pinch confirms a key press
   - thumb-middle pinch sends backspace when hovering the keyboard
-  - thumb-pinky pinch arms one-shot shift for the next letter key press
+- `SHIFT` is an on-screen key; activating it arms one-shot shift for the next letter key press
 - The overlay renders a thin thumb-index line and a midpoint dot; the midpoint dot is the actual keyboard pointer.
 - Safety note: these pinches are blocked when `press_gestures_safe` fails.
 
@@ -117,6 +121,9 @@ These labels may still be predicted by the existing model, but they will not dri
   - palm-facing gate passes
   - `hold` is not active
 - Cursor target is absolute screen position from the thumb-index midpoint.
+- If a closed-fist `hold` starts, the controller freezes the cursor at its current target.
+- Releasing `hold` after repositioning preserves the cursor target by applying a temporary mapping offset.
+- Thumb-pinky pinch clears that offset and instantly returns to direct thumb-index midpoint mapping.
 - Rule-based click/drag-start gestures also require `press_gestures_safe == True`.
 - Clicking is blocked while `hold` is active.
 - During a left pinch, movement aim-locks to the current cursor target until release or drag start.

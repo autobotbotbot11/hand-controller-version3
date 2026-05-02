@@ -23,6 +23,11 @@ class MouseMotionState:
     drag_active: bool = False
     aim_lock_x: float | None = None
     aim_lock_y: float | None = None
+    mapping_offset_x: float = 0.0
+    mapping_offset_y: float = 0.0
+    clutch_active: bool = False
+    clutch_lock_x: float | None = None
+    clutch_lock_y: float | None = None
 
 
 class MouseController:
@@ -49,10 +54,26 @@ class MouseController:
         self.state.last_seen = 0.0
         self.state.motion_awake = False
         self._clear_aim_lock()
+        self._clear_clutch_lock()
 
     def _clear_aim_lock(self) -> None:
         self.state.aim_lock_x = None
         self.state.aim_lock_y = None
+
+    def _clear_clutch_lock(self) -> None:
+        self.state.clutch_active = False
+        self.state.clutch_lock_x = None
+        self.state.clutch_lock_y = None
+
+    def _mapping_offset_active(self) -> bool:
+        return math.hypot(self.state.mapping_offset_x, self.state.mapping_offset_y) >= 0.5
+
+    def _mapping_status(self) -> str:
+        return "mapping=offset" if self._mapping_offset_active() else "mapping=direct"
+
+    def _clear_mapping_offset(self) -> None:
+        self.state.mapping_offset_x = 0.0
+        self.state.mapping_offset_y = 0.0
 
     def _cancel_left_press(self) -> None:
         self.state.left_press_started = None
@@ -76,6 +97,13 @@ class MouseController:
             max(0, min(max_y, int(round(y_norm * max_y)))),
         )
 
+    def _mapped_target(self, pointer_norm: tuple[float, float]) -> tuple[int, int]:
+        raw_x, raw_y = self._screen_target(pointer_norm)
+        return self._clamp_screen_point(
+            raw_x + self.state.mapping_offset_x,
+            raw_y + self.state.mapping_offset_y,
+        )
+
     def _clamp_screen_point(self, x: float, y: float) -> tuple[int, int]:
         max_x = max(0, self.screen_w - 1)
         max_y = max(0, self.screen_h - 1)
@@ -84,29 +112,79 @@ class MouseController:
             max(0, min(max_y, int(round(y)))),
         )
 
+    def _current_cursor_target(self, pointer_norm: tuple[float, float]) -> tuple[int, int]:
+        if self.state.prev_x is not None and self.state.prev_y is not None:
+            return self._clamp_screen_point(self.state.prev_x, self.state.prev_y)
+        if self.state.filtered_x is not None and self.state.filtered_y is not None:
+            return self._clamp_screen_point(self.state.filtered_x, self.state.filtered_y)
+        return self._mapped_target(pointer_norm)
+
+    def _set_stationary_cursor_state(self, x: int, y: int, now: float) -> None:
+        self.state.prev_x = float(x)
+        self.state.prev_y = float(y)
+        self.state.filtered_x = float(x)
+        self.state.filtered_y = float(y)
+        self.state.last_seen = now
+        self.state.motion_awake = False
+
+    def _reset_mapping_to_direct(self, pointer_norm: tuple[float, float], now: float) -> MoveTo:
+        self._clear_mapping_offset()
+        self._clear_aim_lock()
+        self._clear_clutch_lock()
+        x, y = self._screen_target(pointer_norm)
+        self._set_stationary_cursor_state(x, y, now)
+        return MoveTo(x, y)
+
+    def _ensure_clutch_lock(self, pointer_norm: tuple[float, float], now: float) -> MoveTo | None:
+        emit_move = False
+        if self.state.clutch_lock_x is None or self.state.clutch_lock_y is None:
+            lock_x, lock_y = self._current_cursor_target(pointer_norm)
+            if self.state.prev_x is None or self.state.prev_y is None:
+                emit_move = True
+            self.state.clutch_lock_x = float(lock_x)
+            self.state.clutch_lock_y = float(lock_y)
+        else:
+            lock_x, lock_y = self._clamp_screen_point(self.state.clutch_lock_x, self.state.clutch_lock_y)
+
+        self.state.clutch_active = True
+        self._set_stationary_cursor_state(lock_x, lock_y, now)
+        return MoveTo(lock_x, lock_y) if emit_move else None
+
+    def _commit_clutch_offset(self, pointer_norm: tuple[float, float], now: float) -> None:
+        if not self.state.clutch_active:
+            return
+
+        if self.state.clutch_lock_x is None or self.state.clutch_lock_y is None:
+            self._clear_clutch_lock()
+            return
+
+        lock_x, lock_y = self._clamp_screen_point(self.state.clutch_lock_x, self.state.clutch_lock_y)
+        raw_x, raw_y = self._screen_target(pointer_norm)
+        offset_x = float(lock_x - raw_x)
+        offset_y = float(lock_y - raw_y)
+        min_offset = max(8.0, self.motion_settings.wake_threshold_px * 2.0)
+        if math.hypot(offset_x, offset_y) < min_offset:
+            self._clear_mapping_offset()
+        else:
+            self.state.mapping_offset_x = offset_x
+            self.state.mapping_offset_y = offset_y
+
+        self._set_stationary_cursor_state(lock_x, lock_y, now)
+        self._clear_clutch_lock()
+
     def _ensure_aim_lock(self, pointer_norm: tuple[float, float], now: float) -> MoveTo | None:
-        target_x, target_y = self._screen_target(pointer_norm)
         emit_move = False
 
         if self.state.aim_lock_x is None or self.state.aim_lock_y is None:
-            if self.state.prev_x is not None and self.state.prev_y is not None:
-                lock_x, lock_y = self._clamp_screen_point(self.state.prev_x, self.state.prev_y)
-            elif self.state.filtered_x is not None and self.state.filtered_y is not None:
-                lock_x, lock_y = self._clamp_screen_point(self.state.filtered_x, self.state.filtered_y)
-            else:
-                lock_x, lock_y = target_x, target_y
+            lock_x, lock_y = self._current_cursor_target(pointer_norm)
+            if self.state.prev_x is None or self.state.prev_y is None:
                 emit_move = True
             self.state.aim_lock_x = float(lock_x)
             self.state.aim_lock_y = float(lock_y)
         else:
             lock_x, lock_y = self._clamp_screen_point(self.state.aim_lock_x, self.state.aim_lock_y)
 
-        self.state.prev_x = float(lock_x)
-        self.state.prev_y = float(lock_y)
-        self.state.filtered_x = float(lock_x)
-        self.state.filtered_y = float(lock_y)
-        self.state.last_seen = now
-        self.state.motion_awake = False
+        self._set_stationary_cursor_state(lock_x, lock_y, now)
         return MoveTo(lock_x, lock_y) if emit_move else None
 
     def _filter_target(self, x: float, y: float) -> tuple[float, float]:
@@ -144,6 +222,7 @@ class MouseController:
         moving: bool,
     ) -> str:
         parts = [base]
+        parts.append(self._mapping_status())
         if dragging:
             parts.append("dragging")
         if moving:
@@ -241,6 +320,8 @@ class MouseController:
         control_enabled: bool,
         movement_allowed: bool,
         click_enabled: bool,
+        clutch_active: bool = False,
+        reset_mapping: bool = False,
         press_activation_allowed: bool = True,
         right_click_allowed: bool = True,
         click_state: MouseClickGestureState | None,
@@ -260,6 +341,25 @@ class MouseController:
             self._cancel_left_press()
             self._reset_motion()
             return actions, "Mouse | drag release" if released_drag else "Mouse | control off"
+
+        if reset_mapping:
+            actions.append(self._reset_mapping_to_direct(pointer_norm, now))
+            return actions, f"Mouse | direct mapping | {self._mapping_status()}"
+
+        if clutch_active:
+            released_drag = self._release_drag_if_needed(actions)
+            self._cancel_left_press()
+            lock_move = self._ensure_clutch_lock(pointer_norm, now)
+            if lock_move is not None:
+                actions.insert(0, lock_move)
+            return actions, (
+                f"Mouse | drag release | {self._mapping_status()}"
+                if released_drag
+                else f"Mouse | clutch | {self._mapping_status()}"
+            )
+
+        if self.state.clutch_active:
+            self._commit_clutch_offset(pointer_norm, now)
 
         click_status: str | None = None
         freeze_for_click = False
@@ -295,7 +395,7 @@ class MouseController:
         if self.state.last_seen > 0.0 and (now - self.state.last_seen) > self.motion_settings.move_timeout:
             self._reset_motion()
 
-        target_x, target_y = self._screen_target(pointer_norm)
+        target_x, target_y = self._mapped_target(pointer_norm)
         filtered_x, filtered_y = self._filter_target(float(target_x), float(target_y))
         self.state.last_seen = now
         max_x = max(0, self.screen_w - 1)

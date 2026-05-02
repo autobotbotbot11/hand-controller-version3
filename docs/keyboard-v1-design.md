@@ -3,7 +3,7 @@
 Historical note:
 - this file is a keyboard planning/design reference
 - it is not the main current source of truth for the whole app anymore
-- some original V1 assumptions below have been superseded by later UX experiments, especially the keyboard-mode quick mouse bridge
+- some original V1 assumptions below have been superseded by later UX experiments, especially the keyboard-mode quick mouse bridge and thumb-pinky Shift gesture
 - for the current app state and latest behaviors, prefer:
   - `docs/handoff.md`
   - `docs/gesture-spec.md`
@@ -12,8 +12,10 @@ Historical note:
 
 Superseded behavior note:
 - this file still records the original "pure rule-based keyboard" direction
-- current app behavior now allows a narrow MLP `hold` use in keyboard mode for quick mouse movement only
-- current app behavior also allows outside-keyboard pinches to route through mouse clicking while keyboard mode remains active
+- current app treats the keyboard as an overlay tool, not as a separate mouse-blocking mode
+- current app uses MLP `hold` as mouse-layer clutch/freeze, not as a keyboard-only quick mouse bridge
+- current app uses thumb-pinky pinch for direct mouse-mapping reset; Shift is handled by the on-screen `SHIFT` key
+- current app also allows outside-keyboard pinches to route through mouse clicking while the keyboard overlay is visible
 
 This document freezes the intended keyboard design before the rewrite moves further.
 
@@ -46,7 +48,7 @@ It should improve:
 
 ### 1. Keyboard is mostly rule-based
 - Original V1 assumption: keyboard interactions should not depend on the MLP.
-- Current app exception: MLP `hold` can enable keyboard-mode quick mouse movement while held.
+- Current app behavior: MLP `hold` remains a mouse-layer clutch/freeze while the keyboard overlay is visible.
 - MLP labels such as `undo` and `redo` must not drive keyboard actions.
 - Keyboard typing behavior must remain understandable from geometry and pinch rules only.
 
@@ -236,8 +238,8 @@ This allows:
 - Scope: keyboard mode only
 
 ### One-shot shift
-- Gesture: thumb-pinky pinch down
-- Scope: keyboard mode only
+- Gesture: activate the on-screen `SHIFT` key
+- Scope: keyboard overlay only
 - Behavior:
   - arms shift for next key press only
   - auto-resets after one typed key
@@ -245,12 +247,12 @@ This allows:
 ## Keyboard mode rules
 
 - Keyboard actions only work when `control_enabled == True`
-- `mode` must be `keyboard`
+- `keyboard_visible` must be `True`
 - Original V1 assumption: MLP `hold` is ignored in keyboard mode
-- Current app exception: MLP `hold` enables quick mouse movement while held
-- MLP `undo` and `redo` are ignored in keyboard mode
+- Current app behavior: MLP `hold` freezes/clutches mouse movement while the keyboard overlay remains visible
+- MLP `undo` and `redo` stay active as mouse-layer commands while the keyboard overlay is visible
 - Original V1 assumption: mouse movement and mouse click actions are disabled in keyboard mode
-- Current app exception: outside-keyboard pinches may route through mouse clicking when quick mouse movement is not active
+- Current app behavior: mouse movement remains active, and outside-keyboard pinches may route through mouse clicking
 
 ## Overlay behavior contract
 
@@ -366,12 +368,12 @@ V1 may keep these flattened in one `keyboard` section for simplicity, but the in
 
 Keyboard V1 is considered complete when:
 - real transparent overlay exists
-- keyboard mode is visibly different from mouse mode
+- keyboard overlay visibility is clear without replacing mouse control
 - full practical key set exists
 - thumb-ring reliably toggles keyboard mode
 - thumb-index types hovered keys
 - thumb-middle backspaces
-- thumb-pinky shifts next key only
+- on-screen `SHIFT` shifts next key only
 - config can adjust layout size and gesture thresholds
 - architecture remains clean and documented
 

@@ -48,6 +48,8 @@ Current movement model:
 - stable active-hand selection with hysteresis
 - cursor target = midpoint between thumb tip and index tip
 - target maps directly to screen coordinates, matching the keyboard pointer mental model
+- closed-fist `hold` acts as a clutch: it freezes the cursor, lets the user reposition the hand, then applies a temporary offset on release
+- thumb-pinky pinch clears that temporary offset and restores direct mapping to the actual thumb-index midpoint
 - light smoothing plus wake/sleep thresholds reduce small tracking jitter
 - click pinches aim-lock to the current cursor target before release or drag start
 - aim-lock preserves the motion filter anchor instead of repeatedly resetting it while the pinch is held
@@ -61,7 +63,7 @@ Current movement model:
 - `keyboard_visible` is toggled by a rule-based thumb-ring hold.
 - The keyboard is an overlay tool; it does not replace mouse control.
 - Mouse clicks remain rule-based.
-- `hold` is mapped to safety freeze, not Alt+Tab.
+- `hold` is mapped to clutch/freeze, not Alt+Tab.
 - While the keyboard is visible, hovered keys have priority; outside-keyboard thumb-index and thumb-middle pinches route through the mouse click controller.
 
 ## Global Safety Model
@@ -75,6 +77,7 @@ Current movement model:
   - drag start
   - keyboard toggle
   - keyboard typing pinches
+  - thumb-pinky mapping reset
 - The shared gate is computed once per frame and reused across controllers.
 
 ## Camera and launch behavior

@@ -14,6 +14,7 @@ from ..controllers.actions import Action, Click, DoubleClick, Hotkey, KeyPress, 
 from ..controllers.keyboard_controller import KeyboardUpdate
 from ..gestures import (
     HandPinchDetector,
+    HandPinchState,
     HandViewSafety,
     MouseClickGestureState,
     MouseClickDetector,
@@ -30,6 +31,7 @@ from ..vision.models import SelectedHands, VisionResult
 
 THUMB_TIP_IDX = 4
 INDEX_TIP_IDX = 8
+MAPPING_RESET_COOLDOWN_SECONDS = 0.4
 
 
 def _mouse_pointer_norm(hand) -> tuple[float, float]:
@@ -95,6 +97,7 @@ class LiveControlEngine:
         self._diag_last_ml_label: str | None = None
         self._diag_last_hold_active: bool | None = None
         self._diag_last_control_enabled: bool | None = None
+        self._last_mapping_reset_time = -1e9
 
         if self.ml_predictor is None:
             log_diagnostic(f"ml=unavailable reason={self.ml_reason}")
@@ -180,6 +183,32 @@ class LiveControlEngine:
         if prediction.raw_label != ML_LABEL_HOLD:
             return False
         return (prediction.p1 or 0.0) >= self.config.ml.pre_hold_min_p1
+
+    def _should_reset_mapping(
+        self,
+        *,
+        active_pinch_state: HandPinchState | None,
+        press_gestures_safe: bool,
+        now: float,
+    ) -> bool:
+        if not self.runtime_state.control_enabled:
+            return False
+        if not press_gestures_safe:
+            return False
+        if self.runtime_state.hold_active:
+            return False
+        if self.mouse_controller.state.drag_active:
+            return False
+        if active_pinch_state is None:
+            return False
+        if not active_pinch_state.pinky.down:
+            return False
+        if active_pinch_state.index.pressed or active_pinch_state.middle.pressed:
+            return False
+        if (now - self._last_mapping_reset_time) < MAPPING_RESET_COOLDOWN_SECONDS:
+            return False
+        self._last_mapping_reset_time = now
+        return True
 
     def _analyze_hand_safety(
         self,
@@ -306,9 +335,18 @@ class LiveControlEngine:
             if keyboard_visible
             else None
         )
+        reset_mapping = self._should_reset_mapping(
+            active_pinch_state=active_pinch_state,
+            press_gestures_safe=press_gestures_safe,
+            now=now,
+        )
+        if reset_mapping:
+            self._set_gesture_feedback("Direct Mapping", now)
+
         click_enabled = (
             self.runtime_state.control_enabled
             and not self.runtime_state.hold_active
+            and not reset_mapping
             and active_keyboard_hover is None
         )
         if click_enabled:
@@ -335,6 +373,8 @@ class LiveControlEngine:
             control_enabled=self.runtime_state.control_enabled,
             movement_allowed=movement_enabled,
             click_enabled=click_enabled,
+            clutch_active=self.runtime_state.hold_active,
+            reset_mapping=reset_mapping,
             press_activation_allowed=press_gestures_safe,
             right_click_allowed=not pre_hold_right_suppressed,
             click_state=click_state,

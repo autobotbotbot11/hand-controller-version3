@@ -3,7 +3,7 @@
 Historical note:
 - this file is a keyboard implementation-planning reference
 - it may still mention old phase wording and older intermediate assumptions
-- some original V1 assumptions below have been superseded by later UX experiments, especially the keyboard-mode quick mouse bridge
+- some original V1 assumptions below have been superseded by later UX experiments, especially the keyboard-mode quick mouse bridge and thumb-pinky Shift gesture
 - for the current app state and latest behaviors, prefer:
   - `docs/handoff.md`
   - `docs/gesture-spec.md`
@@ -11,8 +11,10 @@ Historical note:
   - `docs/phase-plan.md`
 
 Superseded behavior note:
-- current app behavior now allows a narrow MLP `hold` use in keyboard mode for quick mouse movement only
-- current app behavior also allows outside-keyboard pinches to route through mouse clicking while keyboard mode remains active
+- current app treats the keyboard as an overlay tool, not as a separate mouse-blocking mode
+- current app uses MLP `hold` as mouse-layer clutch/freeze, not as a keyboard-only quick mouse bridge
+- current app uses thumb-pinky pinch for direct mouse-mapping reset; Shift is handled by the on-screen `SHIFT` key
+- current app also allows outside-keyboard pinches to route through mouse clicking while the keyboard overlay is visible
 
 This document turns the keyboard design contract into a practical implementation sequence.
 
@@ -22,7 +24,7 @@ The goal is to implement Keyboard V1 without destabilizing the already-working m
 
 Unless changed later, Keyboard V1 will assume:
 - original plan: keyboard remains pure rule-based
-- current app exception: MLP `hold` can enable keyboard-mode quick mouse movement while held
+- current app behavior: MLP `hold` is mouse-layer clutch/freeze while the keyboard overlay remains visible
 - the current OpenCV keyboard smoke path is temporary only
 - the final keyboard UI must move to a real Qt transparent overlay
 - the keyboard must support a practical complete key set
@@ -204,7 +206,7 @@ Behavior:
 - hover key with pointer
 - thumb-index pinch = key press
 - thumb-middle pinch = backspace
-- thumb-pinky pinch = one-shot shift
+- on-screen `SHIFT` key = one-shot shift
 
 Rules:
 - keep keyboard pure rule-based
@@ -221,8 +223,9 @@ Goal:
 Rules:
 - thumb-ring toggle remains rule-based
 - original plan: keyboard mode disables mouse movement/click behavior
-- current app exception: closed fist enables quick mouse movement while held, and outside-keyboard pinches may route through mouse clicking
-- MLP `undo` and `redo` remain ignored in keyboard mode
+- current app behavior: keyboard is an overlay, mouse movement remains active, and outside-keyboard pinches may route through mouse clicking
+- current app behavior: closed fist is mouse-layer clutch/freeze, not a keyboard-only quick mouse bridge
+- MLP `undo` and `redo` remain active as mouse-layer commands while the keyboard overlay is visible
 
 Exit criteria:
 - switching mouse <-> keyboard is stable and predictable
