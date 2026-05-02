@@ -5,9 +5,9 @@ from typing import Literal, Union
 
 
 @dataclass(frozen=True, slots=True)
-class MoveRelative:
-    dx: int
-    dy: int
+class MoveTo:
+    x: int
+    y: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,4 +40,4 @@ class DoubleClick:
     button: Literal["left"] = "left"
 
 
-Action = Union[MoveRelative, Click, MouseDown, MouseUp, Hotkey, KeyPress, DoubleClick]
+Action = Union[MoveTo, Click, MouseDown, MouseUp, Hotkey, KeyPress, DoubleClick]

@@ -36,7 +36,7 @@ It uses:
 ## What to test
 
 - app start and stop
-- mouse movement smoothness
+- mouse movement smoothness and whether the cursor lines up with the thumb-index midpoint
 - left click
 - right click
 - double click
@@ -67,7 +67,7 @@ It uses:
 
 Use simple notes like this:
 
-- mouse movement: good / bad
+- mouse movement / pointer alignment: good / bad
 - left click: good / bad
 - right click: good / bad
 - double click: good / bad

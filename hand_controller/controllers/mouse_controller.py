@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import math
 
 from ..config.settings import MouseClickConfig, MouseMotionConfig
 from ..gestures import MouseClickGestureState
-from .actions import Action, Click, MouseDown, MouseUp, MoveRelative
+from .actions import Action, Click, MouseDown, MouseUp, MoveTo
 
 
 @dataclass(slots=True)
@@ -16,9 +15,6 @@ class MouseMotionState:
     filtered_x: float | None = None
     filtered_y: float | None = None
     last_seen: float = 0.0
-    deltas: deque[tuple[float, float]] = field(default_factory=lambda: deque(maxlen=2))
-    smooth_dx: float = 0.0
-    smooth_dy: float = 0.0
     motion_awake: bool = False
     last_left_click: float = 0.0
     last_right_click: float = 0.0
@@ -28,7 +24,7 @@ class MouseMotionState:
 
 
 class MouseController:
-    """Mouse controller for Phase 5.5: movement, click taps, and drag."""
+    """Mouse controller for absolute pointer movement, click taps, and drag."""
 
     def __init__(
         self,
@@ -41,7 +37,7 @@ class MouseController:
         self.screen_h = screen_h
         self.motion_settings = motion_settings or MouseMotionConfig()
         self.click_settings = click_settings or MouseClickConfig()
-        self.state = MouseMotionState(deltas=deque(maxlen=self.motion_settings.smoothing_window))
+        self.state = MouseMotionState()
 
     def _reset_motion(self) -> None:
         self.state.prev_x = None
@@ -49,9 +45,6 @@ class MouseController:
         self.state.filtered_x = None
         self.state.filtered_y = None
         self.state.last_seen = 0.0
-        self.state.deltas.clear()
-        self.state.smooth_dx = 0.0
-        self.state.smooth_dy = 0.0
         self.state.motion_awake = False
 
     def _cancel_left_press(self) -> None:
@@ -66,8 +59,18 @@ class MouseController:
             return True
         return False
 
-    def _filter_anchor(self, x: float, y: float) -> tuple[float, float]:
-        alpha = self.motion_settings.anchor_alpha
+    def _screen_target(self, pointer_norm: tuple[float, float]) -> tuple[int, int]:
+        x_norm = max(0.0, min(1.0, pointer_norm[0]))
+        y_norm = max(0.0, min(1.0, pointer_norm[1]))
+        max_x = max(0, self.screen_w - 1)
+        max_y = max(0, self.screen_h - 1)
+        return (
+            max(0, min(max_x, int(round(x_norm * max_x)))),
+            max(0, min(max_y, int(round(y_norm * max_y)))),
+        )
+
+    def _filter_target(self, x: float, y: float) -> tuple[float, float]:
+        alpha = max(0.0, min(1.0, self.motion_settings.ema_alpha))
         if self.state.filtered_x is None or self.state.filtered_y is None or alpha >= 0.999:
             self.state.filtered_x = x
             self.state.filtered_y = y
@@ -76,45 +79,22 @@ class MouseController:
             self.state.filtered_y = alpha * y + (1.0 - alpha) * self.state.filtered_y
         return self.state.filtered_x, self.state.filtered_y
 
-    def _apply_motion_gate(self, dx: float, dy: float) -> tuple[float, float]:
-        magnitude = math.hypot(dx, dy)
-
-        if self.state.motion_awake:
-            if magnitude <= self.motion_settings.sleep_threshold_px:
-                self.state.motion_awake = False
-                self.state.smooth_dx = 0.0
-                self.state.smooth_dy = 0.0
-                self.state.deltas.clear()
-                return 0.0, 0.0
-        else:
-            if magnitude < self.motion_settings.wake_threshold_px:
-                return 0.0, 0.0
+    def _should_emit_move(self, x: int, y: int) -> bool:
+        if self.state.prev_x is None or self.state.prev_y is None:
             self.state.motion_awake = True
+            return True
 
-        if abs(dx) < self.motion_settings.micro_jitter_px:
-            dx = 0.0
-        if abs(dy) < self.motion_settings.micro_jitter_px:
-            dy = 0.0
+        distance = math.hypot(x - self.state.prev_x, y - self.state.prev_y)
+        if self.state.motion_awake:
+            if distance <= self.motion_settings.sleep_threshold_px:
+                self.state.motion_awake = False
+                return False
+            return True
 
-        return dx, dy
-
-    def _shape_delta(self, dx: float, dy: float) -> tuple[float, float]:
-        magnitude = math.hypot(dx, dy)
-        if magnitude <= 1e-6:
-            return 0.0, 0.0
-
-        if magnitude > self.motion_settings.spike_clamp_px:
-            scale = self.motion_settings.spike_clamp_px / magnitude
-            dx *= scale
-            dy *= scale
-            magnitude = self.motion_settings.spike_clamp_px
-
-        shaped_magnitude = magnitude ** self.motion_settings.gain_exponent
-        if magnitude >= self.motion_settings.accel_start_px:
-            shaped_magnitude *= self.motion_settings.fast_gain
-
-        scale = shaped_magnitude / magnitude
-        return dx * scale, dy * scale
+        if distance < self.motion_settings.wake_threshold_px:
+            return False
+        self.state.motion_awake = True
+        return True
 
     def _build_status(
         self,
@@ -216,7 +196,7 @@ class MouseController:
     def update(
         self,
         *,
-        anchor_norm: tuple[float, float] | None,
+        pointer_norm: tuple[float, float] | None,
         control_enabled: bool,
         movement_allowed: bool,
         click_enabled: bool,
@@ -228,7 +208,7 @@ class MouseController:
         actions: list[Action] = []
         click_state = click_state or MouseClickGestureState()
 
-        if anchor_norm is None:
+        if pointer_norm is None:
             released_drag = self._release_drag_if_needed(actions)
             self._cancel_left_press()
             self._reset_motion()
@@ -267,51 +247,21 @@ class MouseController:
             self._reset_motion()
             return actions, click_status or "Mouse | movement frozen"
 
-        x, y = anchor_norm
-
         if self.state.last_seen > 0.0 and (now - self.state.last_seen) > self.motion_settings.move_timeout:
             self._reset_motion()
 
-        filtered_x, filtered_y = self._filter_anchor(x, y)
+        target_x, target_y = self._screen_target(pointer_norm)
+        filtered_x, filtered_y = self._filter_target(float(target_x), float(target_y))
         self.state.last_seen = now
+        max_x = max(0, self.screen_w - 1)
+        max_y = max(0, self.screen_h - 1)
+        move_x = max(0, min(max_x, int(round(filtered_x))))
+        move_y = max(0, min(max_y, int(round(filtered_y))))
 
-        if self.state.prev_x is not None and self.state.prev_y is not None:
-            raw_dx = (filtered_x - self.state.prev_x) * self.screen_w * self.motion_settings.sensitivity
-            raw_dy = (filtered_y - self.state.prev_y) * self.screen_h * self.motion_settings.sensitivity
-
-            jump_magnitude = math.hypot(raw_dx, raw_dy)
-            if jump_magnitude >= self.motion_settings.reanchor_distance_px:
-                self._reset_motion()
-                self.state.prev_x = filtered_x
-                self.state.prev_y = filtered_y
-                return actions, click_status or self._build_status(
-                    base="Mouse | re-anchor",
-                    dragging=self.state.drag_active,
-                    moving=False,
-                )
-
-            gated_dx, gated_dy = self._apply_motion_gate(raw_dx, raw_dy)
-            shaped_dx, shaped_dy = self._shape_delta(gated_dx, gated_dy)
-
-            alpha = self.motion_settings.ema_alpha if self.state.motion_awake else 1.0
-            self.state.smooth_dx = alpha * shaped_dx + (1.0 - alpha) * self.state.smooth_dx
-            self.state.smooth_dy = alpha * shaped_dy + (1.0 - alpha) * self.state.smooth_dy
-
-            self.state.deltas.append((self.state.smooth_dx, self.state.smooth_dy))
-            avg_dx = sum(delta[0] for delta in self.state.deltas) / len(self.state.deltas)
-            avg_dy = sum(delta[1] for delta in self.state.deltas) / len(self.state.deltas)
-
-            avg_dx = max(-self.motion_settings.max_step_px, min(self.motion_settings.max_step_px, avg_dx))
-            avg_dy = max(-self.motion_settings.max_step_px, min(self.motion_settings.max_step_px, avg_dy))
-
-            move_dx = int(round(avg_dx))
-            move_dy = int(round(avg_dy))
-
-            if move_dx != 0 or move_dy != 0:
-                actions.append(MoveRelative(move_dx, move_dy))
-
-        self.state.prev_x = filtered_x
-        self.state.prev_y = filtered_y
+        if self._should_emit_move(move_x, move_y):
+            actions.append(MoveTo(move_x, move_y))
+            self.state.prev_x = float(move_x)
+            self.state.prev_y = float(move_y)
 
         if click_status is not None:
             base_status = click_status

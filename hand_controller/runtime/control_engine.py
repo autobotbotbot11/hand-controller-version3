@@ -28,12 +28,20 @@ from ..vision.hand_selector import HandSelector
 from ..vision.models import SelectedHands, VisionResult
 
 
+THUMB_TIP_IDX = 4
+INDEX_TIP_IDX = 8
 MOVEMENT_ANCHOR_IDX = 5
 
 
 def _movement_anchor_norm(hand) -> tuple[float, float]:
     point = hand.landmark(MOVEMENT_ANCHOR_IDX)
     return point.x, point.y
+
+
+def _mouse_pointer_norm(hand) -> tuple[float, float]:
+    thumb = hand.landmark(THUMB_TIP_IDX)
+    index = hand.landmark(INDEX_TIP_IDX)
+    return (thumb.x + index.x) / 2.0, (thumb.y + index.y) / 2.0
 
 
 def _hovered_keyboard_label(keyboard_update: KeyboardUpdate, hand_label: str | None) -> str | None:
@@ -177,7 +185,7 @@ class LiveControlEngine:
         self.click_detector.reset()
         self.keyboard_controller.reset()
         mouse_actions, mouse_status = self.mouse_controller.update(
-            anchor_norm=None,
+            pointer_norm=None,
             control_enabled=self.runtime_state.control_enabled,
             movement_allowed=False,
             click_enabled=False,
@@ -312,7 +320,7 @@ class LiveControlEngine:
             else:
                 self.click_detector.reset()
 
-            anchor_norm = _movement_anchor_norm(active_hand) if active_hand is not None else None
+            pointer_norm = _mouse_pointer_norm(active_hand) if active_hand is not None else None
             movement_enabled = (
                 active_hand is not None
                 and palm_facing
@@ -322,7 +330,7 @@ class LiveControlEngine:
             self.runtime_state.movement_frozen = not movement_enabled
 
             mouse_actions, mouse_status = self.mouse_controller.update(
-                anchor_norm=anchor_norm,
+                pointer_norm=pointer_norm,
                 control_enabled=self.runtime_state.control_enabled,
                 movement_allowed=movement_enabled,
                 click_enabled=click_enabled,
@@ -387,13 +395,13 @@ class LiveControlEngine:
             else:
                 self.click_detector.reset()
 
-            anchor_norm = (
+            pointer_norm = (
                 _movement_anchor_norm(active_hand)
                 if active_hand is not None and (keyboard_mouse_movement_allowed or keyboard_mouse_click_enabled)
                 else None
             )
             mouse_actions, mouse_status = self.mouse_controller.update(
-                anchor_norm=anchor_norm,
+                pointer_norm=pointer_norm,
                 control_enabled=self.runtime_state.control_enabled,
                 movement_allowed=keyboard_mouse_movement_allowed,
                 click_enabled=keyboard_mouse_click_enabled,

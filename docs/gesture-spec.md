@@ -18,7 +18,7 @@ This document freezes the meaning of each gesture before implementation starts.
 
 ### `hold`
 - Physical pose: closed fist.
-- Runtime meaning in mouse mode: clutch.
+- Runtime meaning in mouse mode: safety freeze.
 - Mouse-mode runtime action: mouse movement off and mouse clicking off.
 - Runtime meaning in keyboard mode: quick mouse-control bridge while held.
 - Keyboard-mode runtime action: mouse movement on while held, mouse clicking blocked while movement is active.
@@ -53,6 +53,11 @@ These labels may still be predicted by the existing model, but they will not dri
 ### Palm facing
 - Used as a safety gate for mouse control.
 - If palm is not facing the camera, mouse movement is disabled.
+
+### Mouse pointer
+- Mouse mode uses the midpoint between thumb tip and index tip as the cursor target.
+- The target maps directly to screen coordinates, matching the keyboard pointer behavior.
+- Movement can still be smoothed and gated to reduce tiny tracking jitter.
 
 ### Press safety gate
 - Rule-based press gestures must also pass a shared hand-view safety check.
@@ -111,6 +116,7 @@ These labels may still be predicted by the existing model, but they will not dri
   - `mode == mouse`
   - palm-facing gate passes
   - `hold` is not active
+- Cursor target is absolute screen position from the thumb-index midpoint.
 - Rule-based click/drag-start gestures also require `press_gestures_safe == True`.
 - Clicking is blocked while `hold` is active.
 - During a left pinch, movement freezes only until drag starts.

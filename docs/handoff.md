@@ -33,10 +33,10 @@ These decisions are intentional and should not be changed casually.
 - It should require a short sustained hold before toggling.
 - Reason: the user must be able to turn control back on using the same gesture while the app is still running.
 
-### Clutch
+### Hold safety freeze
 - ML `hold` uses the closed-fist pose.
-- In mouse mode, `hold` means clutch.
-- Mouse-mode clutch disables mouse movement and mouse clicks.
+- In mouse mode, `hold` now means safety freeze.
+- Mouse-mode safety freeze disables mouse movement and mouse clicks.
 - In keyboard mode, there is one intentional exception: closed fist currently enables a quick mouse-control bridge while held.
 - Keyboard-mode closed fist still blocks mouse clicking while movement is active, because the fist pose can accidentally collapse into thumb-index or thumb-middle contact.
 - Reason: the user needs a fast way to move the mouse while typing, but click lock during fist movement keeps the bridge safer.
@@ -281,6 +281,7 @@ The baseline phases are already implemented. The likely next task is keyboard UX
 - `undo` and `redo` should stay inactive while in keyboard mode.
 - `hold` has a narrow keyboard-mode exception for quick mouse movement while held; do not broaden it into unrelated keyboard commands.
 - Clicking should stay rule-based even if the MLP predicts click labels.
+- Mouse movement is now absolute screen-space movement from the thumb-index midpoint, not relative hand deltas.
 - Do not remove the shared hand-view press-safety gate unless a better global safety replacement exists.
 - Do not remove the Windows `CAP_DSHOW` preference casually; it materially improved startup on the target machine.
 - Do not reintroduce form-style `Apply / Discard` UX into the main window; the app's current settings model is intentionally live-change oriented.

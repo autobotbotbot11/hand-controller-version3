@@ -14,17 +14,20 @@ from ..vision.hand_tracker import HandTracker
 from ..vision.models import DetectedHand, SelectedHands, VisionResult
 
 
-VISUAL_CURSOR_IDX = 8
+THUMB_TIP_IDX = 4
+INDEX_TIP_IDX = 8
 
 
-def _visual_cursor_px(hand: DetectedHand, frame_width: int, frame_height: int) -> tuple[int, int]:
-    point = hand.landmark(VISUAL_CURSOR_IDX)
-    return int(point.x * frame_width), int(point.y * frame_height)
-
-
-def _anchor_px(hand: DetectedHand, frame_width: int, frame_height: int) -> tuple[int, int]:
-    point = hand.landmark(5)
-    return int(point.x * frame_width), int(point.y * frame_height)
+def _mouse_pointer_px(hand: DetectedHand, frame_width: int, frame_height: int) -> tuple[int, int, int, int, int, int]:
+    thumb = hand.landmark(THUMB_TIP_IDX)
+    index = hand.landmark(INDEX_TIP_IDX)
+    thumb_x = int(thumb.x * frame_width)
+    thumb_y = int(thumb.y * frame_height)
+    index_x = int(index.x * frame_width)
+    index_y = int(index.y * frame_height)
+    pointer_x = int(round((thumb_x + index_x) / 2.0))
+    pointer_y = int(round((thumb_y + index_y) / 2.0))
+    return pointer_x, pointer_y, thumb_x, thumb_y, index_x, index_y
 
 
 def _draw_keyboard_overlay(frame_bgr, *, keyboard_update: KeyboardUpdate, control_enabled: bool) -> None:
@@ -210,17 +213,16 @@ def _draw_control_smoke(
         )
 
     if runtime_state.mode == Mode.MOUSE and selected.primary is not None:
-        anchor_x, anchor_y = _anchor_px(selected.primary, width, height)
-        cursor_x, cursor_y = _visual_cursor_px(selected.primary, width, height)
-        cv2.circle(frame_bgr, (anchor_x, anchor_y), 10, (0, 140, 255), 2)
-        cv2.circle(frame_bgr, (cursor_x, cursor_y), 10, (255, 255, 0), 2)
+        pointer_x, pointer_y, thumb_x, thumb_y, index_x, index_y = _mouse_pointer_px(selected.primary, width, height)
+        cv2.line(frame_bgr, (thumb_x, thumb_y), (index_x, index_y), (255, 255, 255), 1, cv2.LINE_AA)
+        cv2.circle(frame_bgr, (pointer_x, pointer_y), 10, (255, 255, 0), 2)
         cv2.putText(
             frame_bgr,
-            "anchor",
-            (anchor_x + 12, anchor_y + 4),
+            "pointer",
+            (pointer_x + 12, pointer_y + 4),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
-            (0, 140, 255),
+            (255, 255, 0),
             2,
             cv2.LINE_AA,
         )

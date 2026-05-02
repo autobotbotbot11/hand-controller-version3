@@ -125,8 +125,9 @@ Recent hardening already added after the original phase sequence:
 - keyboard thumb-index midpoint pointer experiment with visible line/dot guidance
 - keyboard-mode quick mouse bridge: closed fist moves the mouse while held, outside-keyboard pinches can click, and hovered keys keep keyboard priority
 - keyboard dim cue while the quick mouse bridge is active
+- mouse mode absolute movement: cursor follows the thumb-index midpoint screen position directly
 
 Current recommended next step:
 - validate keyboard UX in real use before adding larger keyboard mechanics
-- specifically test midpoint aiming, closed-fist mouse movement, outside-keyboard click routing, and the keyboard dim cue
+- specifically test mouse absolute aiming, midpoint aiming, closed-fist mouse movement, outside-keyboard click routing, and the keyboard dim cue
 - avoid restarting old phases; the baseline phase sequence is complete

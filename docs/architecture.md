@@ -42,15 +42,15 @@ Current practical note:
 - these are narrow UX/performance helpers, not a general multi-threaded rewrite.
 
 ## Mouse movement strategy
-Stable movement will adapt the useful parts of codebase 2 without copying its entire runtime structure.
+Mouse mode now uses absolute screen-space movement instead of relative hand deltas.
 
-Key ideas to port:
+Current movement model:
 - stable active-hand selection with hysteresis
-- movement anchor at index MCP instead of fingertip or wrist
-- relative movement instead of absolute hand-to-screen mapping
-- anti-jitter wake and sleep thresholds
-- spike clamp and per-frame step cap
-- re-anchor logic after large discontinuities
+- cursor target = midpoint between thumb tip and index tip
+- target maps directly to screen coordinates, matching the keyboard pointer mental model
+- light smoothing plus wake/sleep thresholds reduce small tracking jitter
+- click pinches still freeze movement before drag starts
+- drag resumes movement after the left-button hold starts
 - fast action execution with no extra per-action pause
 
 ## Control model
@@ -58,7 +58,7 @@ Key ideas to port:
 - Recognition continues even when control is disabled.
 - `mode` is toggled by a rule-based thumb-ring hold.
 - Mouse clicks remain rule-based.
-- `hold` is mapped to mouse-mode clutch, not Alt+Tab.
+- `hold` is mapped to mouse-mode safety freeze, not Alt+Tab.
 - Keyboard mode has one narrow `hold` exception: closed fist enables quick mouse movement while held.
 - Keyboard mode is toggled by a rule-based thumb-ring hold and typed with rule-based pinch events.
 - In keyboard mode, hovered keys have priority; outside-keyboard thumb-index and thumb-middle pinches can route through the mouse click controller.

@@ -59,12 +59,12 @@ python -m hand_controller --ui-live --tuning .\tuning.testing.json
 ## Main Controls
 
 ### Mouse Mode
-- move: active hand, palm facing sa camera
+- move: thumb-index midpoint follows the screen position directly, palm facing sa camera
 - left click: thumb + index pinch
 - right click: thumb + middle pinch
 - double click: two quick left-click pinches
 - drag: hold the left pinch
-- ML `hold`: hihinto ang movement at clicks for safety
+- ML `hold`: safety freeze; hihinto ang movement at clicks
 - ML `toggle`: on/off ng control without stopping recognition
 - ML `undo`: `Ctrl+Z`
 - ML `redo`: `Ctrl+Y`
