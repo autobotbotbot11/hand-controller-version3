@@ -22,7 +22,7 @@ from ..gestures import (
     is_palm_facing_thumb_pinky,
 )
 from ..ml import MLPrediction, MLPredictor, MLControlAdapter
-from ..ml.labels import ML_LABEL_HOLD
+from ..ml.labels import ML_LABEL_HOLD, canonicalize_label
 from ..runtime.state import RuntimeState
 from .diagnostics import log_diagnostic
 from ..vision.hand_selector import HandSelector
@@ -52,6 +52,37 @@ def _hovered_keyboard_label(keyboard_update: KeyboardUpdate, hand_label: str | N
         if label == hand_label:
             return hovered
     return None
+
+
+def _hand_by_label(hands: tuple[DetectedHand, ...], label: str | None) -> DetectedHand | None:
+    if label is None:
+        return None
+    for hand in hands:
+        if hand.label == label:
+            return hand
+    return None
+
+
+def _selected_with_primary(
+    selected: SelectedHands,
+    hands: tuple[DetectedHand, ...],
+    primary: DetectedHand | None,
+) -> SelectedHands:
+    if primary is None:
+        return SelectedHands(
+            primary=None,
+            secondary=None,
+            left=selected.left,
+            right=selected.right,
+        )
+
+    secondary = next((hand for hand in hands if hand is not primary), None)
+    return SelectedHands(
+        primary=primary,
+        secondary=secondary,
+        left=selected.left,
+        right=selected.right,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -110,7 +141,14 @@ class LiveControlEngine:
         self._diag_last_ml_label: str | None = None
         self._diag_last_hold_active: bool | None = None
         self._diag_last_control_enabled: bool | None = None
+        self._diag_last_owner_trace = ""
+        self._diag_last_owner_trace_time = 0.0
         self._last_mapping_reset_time = -1e9
+        self._mouse_owner_label: str | None = None
+        self._hold_owner_label: str | None = None
+        self._hold_owner_enabled = ML_LABEL_HOLD in {
+            canonicalize_label(label) for label in config.ml.accepted_action_labels
+        }
 
         if self.ml_predictor is None:
             log_diagnostic(f"ml=unavailable reason={self.ml_reason}")
@@ -249,6 +287,185 @@ class LiveControlEngine:
             return False
         return (prediction.p1 or 0.0) >= self.config.ml.pre_hold_min_p1
 
+    def _is_hold_owner_candidate(self, prediction: MLPrediction) -> bool:
+        if not self._hold_owner_enabled:
+            return False
+        if not self.runtime_state.control_enabled:
+            return False
+        if not prediction.available:
+            return False
+        if prediction.label != ML_LABEL_HOLD:
+            return False
+        return (prediction.p1 or 0.0) >= self.config.ml.pre_hold_min_p1
+
+    def _predict_trusted_hands(
+        self,
+        trusted_hands: tuple[DetectedHand, ...],
+    ) -> dict[str, MLPrediction]:
+        if self.ml_predictor is None:
+            return {}
+        return {hand.label: self.ml_predictor.predict(hand) for hand in trusted_hands}
+
+    def _ml_prediction_for_hand(
+        self,
+        *,
+        hand: DetectedHand | None,
+        predictions_by_label: dict[str, MLPrediction],
+    ) -> MLPrediction:
+        if self.ml_predictor is None:
+            return MLPrediction(available=False, reason=self.ml_reason)
+        if hand is None:
+            return MLPrediction(available=True)
+        prediction = predictions_by_label.get(hand.label)
+        if prediction is not None:
+            return prediction
+        return self.ml_predictor.predict(hand)
+
+    def _current_hold_candidate(
+        self,
+        *,
+        selected: SelectedHands,
+        trusted_hands: tuple[DetectedHand, ...],
+        predictions_by_label: dict[str, MLPrediction],
+    ) -> DetectedHand | None:
+        hold_labels = {
+            label for label, prediction in predictions_by_label.items()
+            if self._is_hold_owner_candidate(prediction)
+        }
+        if not hold_labels:
+            return None
+
+        selected_label = selected.primary.label if selected.primary is not None else None
+        priority_labels = (
+            self._hold_owner_label,
+            self.runtime_state.active_hand_label,
+            selected_label,
+        )
+        for label in priority_labels:
+            if label in hold_labels:
+                return _hand_by_label(trusted_hands, label)
+
+        for hand in trusted_hands:
+            if hand.label in hold_labels:
+                return hand
+        return None
+
+    def _hold_candidate_labels(
+        self,
+        predictions_by_label: dict[str, MLPrediction],
+    ) -> tuple[str, ...]:
+        return tuple(
+            label for label, prediction in predictions_by_label.items()
+            if self._is_hold_owner_candidate(prediction)
+        )
+
+    def _prediction_debug_text(self, predictions_by_label: dict[str, MLPrediction]) -> str:
+        parts: list[str] = []
+        for label, prediction in predictions_by_label.items():
+            p1 = f"{prediction.p1:.2f}" if prediction.p1 is not None else "-"
+            margin = f"{prediction.margin:.2f}" if prediction.margin is not None else "-"
+            parts.append(f"{label}:{prediction.raw_label}/{prediction.label}/{p1}/{margin}")
+        return ";".join(parts) if parts else "-"
+
+    def _log_owner_trace(
+        self,
+        *,
+        now: float,
+        trusted_hands: tuple[DetectedHand, ...],
+        raw_selected_label: str | None,
+        active_hand: DetectedHand | None,
+        predictions_by_label: dict[str, MLPrediction],
+        ml_status: str,
+        mouse_status: str,
+    ) -> None:
+        hold_candidates = self._hold_candidate_labels(predictions_by_label)
+        should_trace = (
+            len(trusted_hands) >= 2
+            or bool(hold_candidates)
+            or self.runtime_state.hold_active
+            or self._hold_owner_label is not None
+        )
+        if not should_trace:
+            return
+
+        trusted = ",".join(hand.label for hand in trusted_hands) or "-"
+        trace = (
+            "owner_trace "
+            f"trusted={trusted} "
+            f"raw_selected={raw_selected_label or '-'} "
+            f"active={active_hand.label if active_hand is not None else '-'} "
+            f"mouse_owner={self._mouse_owner_label or '-'} "
+            f"owner={self._hold_owner_label or '-'} "
+            f"hold_active={'yes' if self.runtime_state.hold_active else 'no'} "
+            f"hold_candidates={','.join(hold_candidates) or '-'} "
+            f"preds={self._prediction_debug_text(predictions_by_label)} "
+            f"ml_status={ml_status} "
+            f"mouse={mouse_status}"
+        )
+        if trace == self._diag_last_owner_trace and (now - self._diag_last_owner_trace_time) < 0.50:
+            return
+        self._diag_last_owner_trace = trace
+        self._diag_last_owner_trace_time = now
+        log_diagnostic(trace)
+
+    def _resolve_active_hand(
+        self,
+        *,
+        selected: SelectedHands,
+        trusted_hands: tuple[DetectedHand, ...],
+        predictions_by_label: dict[str, MLPrediction],
+    ) -> tuple[SelectedHands, DetectedHand | None]:
+        owner_hand = _hand_by_label(trusted_hands, self._hold_owner_label)
+        if self.runtime_state.hold_active and owner_hand is None and self._hold_owner_label is not None:
+            return _selected_with_primary(selected, trusted_hands, None), None
+        if self.runtime_state.hold_active and owner_hand is not None:
+            selected = _selected_with_primary(selected, trusted_hands, owner_hand)
+            return selected, owner_hand
+
+        hold_candidate = self._current_hold_candidate(
+            selected=selected,
+            trusted_hands=trusted_hands,
+            predictions_by_label=predictions_by_label,
+        )
+        if hold_candidate is not None:
+            self._mouse_owner_label = hold_candidate.label
+            selected = _selected_with_primary(selected, trusted_hands, hold_candidate)
+            return selected, hold_candidate
+
+        mouse_owner = _hand_by_label(trusted_hands, self._mouse_owner_label)
+        if mouse_owner is not None:
+            selected = _selected_with_primary(selected, trusted_hands, mouse_owner)
+            return selected, mouse_owner
+
+        if self._mouse_owner_label is not None:
+            self._mouse_owner_label = None
+
+        if selected.primary is not None:
+            self._mouse_owner_label = selected.primary.label
+        return selected, selected.primary
+
+    def _update_hold_owner_latch(
+        self,
+        *,
+        active_hand: DetectedHand | None,
+        prediction: MLPrediction,
+    ) -> None:
+        if not self.runtime_state.control_enabled:
+            self._hold_owner_label = None
+            self._mouse_owner_label = None
+            return
+        if self.runtime_state.hold_active:
+            if self._hold_owner_label is None and active_hand is not None:
+                self._hold_owner_label = active_hand.label
+            if active_hand is not None:
+                self._mouse_owner_label = active_hand.label
+            return
+        if self._is_hold_owner_candidate(prediction) and active_hand is not None:
+            self._hold_owner_label = active_hand.label
+            self._mouse_owner_label = active_hand.label
+            return
+        self._hold_owner_label = None
+
     def _should_reset_mapping(
         self,
         *,
@@ -326,7 +543,13 @@ class LiveControlEngine:
         )
         trusted_hands = ownership_update.trusted_hands
         selected = self.selector.select(trusted_hands, vision.frame_width, vision.frame_height)
-        active_hand = selected.primary
+        raw_selected_label = selected.primary.label if selected.primary is not None else None
+        ml_predictions_by_label = self._predict_trusted_hands(trusted_hands)
+        selected, active_hand = self._resolve_active_hand(
+            selected=selected,
+            trusted_hands=trusted_hands,
+            predictions_by_label=ml_predictions_by_label,
+        )
         active_hand_safety = hand_safety_by_label.get(active_hand.label) if active_hand is not None else None
         palm_facing = (
             active_hand_safety.ordering_ok
@@ -355,11 +578,15 @@ class LiveControlEngine:
             self._set_gesture_feedback("Hand Locked", now)
         active_pinch_state = pinch_states.get(active_hand.label) if active_hand is not None else None
 
-        if self.ml_predictor is not None:
-            ml_prediction = self.ml_predictor.predict(active_hand)
-        else:
-            ml_prediction = MLPrediction(available=False, reason=self.ml_reason)
+        ml_prediction = self._ml_prediction_for_hand(
+            hand=active_hand,
+            predictions_by_label=ml_predictions_by_label,
+        )
         ml_update = self.ml_adapter.update(ml_prediction, self.runtime_state, now)
+        self._update_hold_owner_latch(
+            active_hand=active_hand,
+            prediction=ml_prediction,
+        )
         if not self.runtime_state.control_enabled:
             self._clear_helper_hint()
 
@@ -483,6 +710,15 @@ class LiveControlEngine:
         click_freeze = click_enabled and (
             click_state.right_pressed
             or (click_state.left_pressed and not self.mouse_controller.state.drag_active)
+        )
+        self._log_owner_trace(
+            now=now,
+            trusted_hands=trusted_hands,
+            raw_selected_label=raw_selected_label,
+            active_hand=active_hand,
+            predictions_by_label=ml_predictions_by_label,
+            ml_status=ml_update.status,
+            mouse_status=mouse_status,
         )
 
         execute_actions(action_queue)

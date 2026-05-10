@@ -36,6 +36,7 @@ This document freezes the meaning of each gesture before implementation starts.
 - Runtime action: mouse movement and mouse clicking are frozen while held.
 - Release action: if the hand moved while held, the cursor position is preserved and mouse mapping switches to a temporary offset.
 - Important note: the keyboard overlay does not change this; closed fist is no longer required to move the mouse while the keyboard is visible.
+- Two-hand note: trusted hands are checked for `hold` before the final active mouse hand is chosen. While `hold` is active, the hand that started the hold remains the mouse/reposition owner; the cursor should not jump to the other trusted hand.
 - Removed meaning: this no longer triggers Alt+Tab.
 
 ### `toggle`

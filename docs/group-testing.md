@@ -48,6 +48,7 @@ It uses:
 - drag and drop
 - ML `toggle` on/off
 - ML `hold` clutch/reposition
+  - with two trusted hands visible, closing one hand for hold should not make the cursor jump to the other hand
 - thumb-pinky cursor reset
 - `undo`
 - side-view safety

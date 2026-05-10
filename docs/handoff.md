@@ -38,6 +38,7 @@ These decisions are intentional and should not be changed casually.
 - `hold` now means clutch/freeze.
 - While held, it disables mouse movement and mouse clicks.
 - On release, if the hand was repositioned, the cursor target is preserved by applying a temporary mouse-mapping offset.
+- In two-hand keyboard use, trusted hands are checked for ML `hold` before final active-hand selection. The hand that starts `hold` remains the mouse/reposition owner until release, so the cursor does not jump to the other trusted hand.
 - Thumb-pinky pinch clears that offset and instantly returns to direct thumb-index midpoint mapping.
 - The keyboard overlay does not change this; closed fist is no longer a quick mouse-control bridge.
 - Reason: mouse control remains active while the keyboard is visible, so a separate closed-fist bridge is no longer needed.

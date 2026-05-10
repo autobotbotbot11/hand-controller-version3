@@ -15,10 +15,10 @@ _MARKER_PATH = RUNTIME_APP_DIR / "HandController.diagnostics"
 
 
 def diagnostics_enabled() -> bool:
-    if not bool(getattr(sys, "frozen", False)):
-        return False
     if os.environ.get("HANDCONTROLLER_DIAGNOSTICS") == "1":
         return True
+    if not bool(getattr(sys, "frozen", False)):
+        return False
     return _MARKER_PATH.exists()
 
 

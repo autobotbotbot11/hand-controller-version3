@@ -67,6 +67,7 @@ Current movement model:
 - The keyboard is an overlay tool; it does not replace mouse control.
 - Mouse clicks remain rule-based.
 - `hold` is mapped to clutch/freeze, not Alt+Tab.
+- The engine checks trusted hands for ML `hold` before finalizing the active mouse hand, then latches the mouse/reposition owner so two-hand keyboard use cannot make the cursor jump to the other trusted hand.
 - While the keyboard is visible, hovered keys have priority; outside-keyboard thumb-index and thumb-middle pinches route through the mouse click controller.
 
 ## Global Safety Model
