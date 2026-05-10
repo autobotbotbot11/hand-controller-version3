@@ -254,12 +254,15 @@ class HandOwnershipTracker:
             progress_by_label = {}
             new_locks = 0
 
-        can_show_add_prompt = len(self._slots) == 0 or allow_additional_hands
-        guide_visible = can_show_add_prompt and len(self._slots) < max_count
+        needs_first_hand = len(self._slots) == 0
+        has_lock_candidate = bool(candidates)
+        guide_visible = len(self._slots) < max_count and (
+            needs_first_hand or (allow_additional_hands and has_lock_candidate)
+        )
         progress = max(progress_by_label.values(), default=0.0)
-        if progress > 0.0:
+        if has_lock_candidate:
             guide_text = "Hold still"
-        elif len(self._slots) == 0:
+        elif needs_first_hand:
             guide_text = "Place hand here"
         else:
             guide_text = "Place other hand here"
