@@ -14,10 +14,16 @@ from ..ml import MLPrediction, MLPredictor
 from ..runtime.control_engine import LiveControlEngine
 from ..runtime.diagnostics import diagnostics_enabled, diagnostics_log_path, log_diagnostic
 from ..runtime.state import RuntimeState
-from ..ui.payloads import OverlayKeyRect, OverlayOwnershipGuide, OverlayPayload, OverlayPointer
+from ..ui.payloads import (
+    OverlayKeyRect,
+    OverlayOwnershipGuide,
+    OverlayPayload,
+    OverlayPointer,
+    OverlaySkeletonLine,
+)
 from ..vision.camera import Camera
 from ..vision.hand_tracker import HandTracker
-from ..vision.models import SelectedHands, VisionResult
+from ..vision.models import DetectedHand, SelectedHands, VisionResult
 
 if TYPE_CHECKING:
     from ..ui.main_window import MainWindow
@@ -39,15 +45,18 @@ def _build_skeleton_lines(
     tracker: HandTracker,
     screen_width: int,
     screen_height: int,
-) -> tuple[tuple[int, int, int, int], ...]:
-    lines: list[tuple[int, int, int, int]] = []
+    trusted_hands: tuple[DetectedHand, ...],
+) -> tuple[OverlaySkeletonLine, ...]:
+    trusted_ids = {id(hand) for hand in trusted_hands}
+    lines: list[OverlaySkeletonLine] = []
     for hand in vision.hands:
+        trusted = id(hand) in trusted_ids
         for start_idx, end_idx in tracker.connections:
             start = hand.landmark(start_idx)
             end = hand.landmark(end_idx)
             x1, y1 = _screen_xy(start.x, start.y, screen_width, screen_height)
             x2, y2 = _screen_xy(end.x, end.y, screen_width, screen_height)
-            lines.append((x1, y1, x2, y2))
+            lines.append(OverlaySkeletonLine(x1=x1, y1=y1, x2=x2, y2=y2, trusted=trusted))
     return tuple(lines)
 
 
@@ -197,7 +206,7 @@ def _build_overlay_payload(
     runtime_state: RuntimeState,
     keyboard_update: KeyboardUpdate,
     mouse_pointers: tuple[OverlayPointer, ...],
-    skeleton_lines: tuple[tuple[int, int, int, int], ...],
+    skeleton_lines: tuple[OverlaySkeletonLine, ...],
     selfie_frame,
     mouse_status: str,
     movement_enabled: bool,
@@ -284,7 +293,13 @@ def run_ui_live_worker(
                         screen_width,
                         screen_height,
                     ),
-                    skeleton_lines=_build_skeleton_lines(frame_result.vision, tracker, screen_width, screen_height),
+                    skeleton_lines=_build_skeleton_lines(
+                        frame_result.vision,
+                        tracker,
+                        screen_width,
+                        screen_height,
+                        frame_result.trusted_hands,
+                    ),
                     selfie_frame=_build_selfie_frame(
                         frame_bgr,
                         width=config.keyboard.selfie_width_px,

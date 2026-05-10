@@ -64,6 +64,7 @@ These decisions are intentional and should not be changed casually.
 - Up to two trusted hands can be locked so keyboard typing can use both hands.
 - Opening the keyboard with one trusted hand shows a short helper hint for adding the other hand.
 - The optional second-hand guide remains hidden until an untrusted hand is placed in the center lock zone while the keyboard overlay is visible.
+- Trusted hands use the normal cyan skeleton; untrusted detected hands are rendered dim gray instead of getting cursor-area markers.
 - Brief hand loss is reacquired near the last trusted-hand position; longer loss expires the lock.
 - If no trusted hands remain, control actions are blocked and the center guide returns.
 - Reason: a person passing behind the user must not be able to steal cursor or keyboard control.

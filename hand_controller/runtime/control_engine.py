@@ -27,7 +27,7 @@ from ..runtime.state import RuntimeState
 from .diagnostics import log_diagnostic
 from ..vision.hand_selector import HandSelector
 from ..vision.hand_ownership import HandOwnershipTracker, OwnershipGuide
-from ..vision.models import SelectedHands, VisionResult
+from ..vision.models import DetectedHand, SelectedHands, VisionResult
 
 
 THUMB_TIP_IDX = 4
@@ -58,6 +58,7 @@ def _hovered_keyboard_label(keyboard_update: KeyboardUpdate, hand_label: str | N
 class ControlFrameResult:
     runtime_state: RuntimeState
     vision: VisionResult
+    trusted_hands: tuple[DetectedHand, ...]
     selected: SelectedHands
     click_state: MouseClickGestureState
     keyboard_update: KeyboardUpdate
@@ -539,6 +540,7 @@ class LiveControlEngine:
         return ControlFrameResult(
             runtime_state=self.runtime_state,
             vision=vision,
+            trusted_hands=trusted_hands,
             selected=selected,
             click_state=click_state,
             keyboard_update=keyboard_update,

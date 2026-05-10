@@ -38,6 +38,8 @@ It uses:
 - app start and stop
 - trusted-hand lock
   - on launch, place hand in the subtle center guide until `Hand Locked`
+  - locked hands should keep the normal cyan skeleton
+  - untrusted detected hands should appear dim gray
   - another person's hand should not move/click/type unless it is also locked
 - mouse movement smoothness and whether the cursor lines up with the thumb-index midpoint
 - left click

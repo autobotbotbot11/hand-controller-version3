@@ -18,6 +18,7 @@ This document freezes the meaning of each gesture before implementation starts.
 - One trusted hand is enough to start; a second hand can be added later while the keyboard overlay is visible.
 - When the keyboard opens with one trusted hand, a short helper hint explains that the other hand can be moved to center to add it.
 - The optional second-hand guide stays hidden until an untrusted hand is placed inside the lock zone.
+- Trusted hands use the normal cyan skeleton; untrusted detected hands render as dim gray so ownership is visible without adding cursor-area UI.
 - If a trusted hand disappears briefly, the app tries to reacquire it near its last position.
 - If trusted hands are lost too long, their locks expire. When no trusted hands remain, control actions are blocked and the center guide returns.
 

@@ -62,7 +62,7 @@ Current movement model:
 - Recognition continues even when control is disabled.
 - `HandOwnershipTracker` filters raw detected hands into trusted hands before selection, pinches, keyboard actions, and ML prediction.
 - The first trusted hand is locked through a subtle center overlay guide; a second trusted hand can be added while the keyboard is visible.
-- Untrusted hands may still be visible in the overlay skeleton, but they cannot produce actions.
+- Untrusted hands may still be visible in the overlay skeleton, but they render dim gray and cannot produce actions.
 - `keyboard_visible` is toggled by a rule-based thumb-ring hold.
 - The keyboard is an overlay tool; it does not replace mouse control.
 - Mouse clicks remain rule-based.

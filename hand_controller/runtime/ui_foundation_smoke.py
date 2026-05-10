@@ -6,7 +6,12 @@ from typing import TYPE_CHECKING
 
 from ..config.settings import AppConfig
 from ..controllers.keyboard_controller import KeyboardController
-from ..ui.payloads import OverlayKeyRect, OverlayPayload, OverlayPointer
+from ..ui.payloads import (
+    OverlayKeyRect,
+    OverlayPayload,
+    OverlayPointer,
+    OverlaySkeletonLine,
+)
 
 if TYPE_CHECKING:
     from ..ui.main_window import MainWindow
@@ -52,11 +57,11 @@ def _build_mock_payload(
 
     oscillation = int(20 * math.sin(elapsed * 1.6))
     skeleton_lines = (
-        (980, 180 + oscillation, 1030, 260 + oscillation),
-        (1030, 260 + oscillation, 1095, 320 + oscillation),
-        (1030, 260 + oscillation, 980, 340 + oscillation),
-        (1030, 260 + oscillation, 1115, 255 + oscillation),
-        (1030, 260 + oscillation, 1125, 185 + oscillation),
+        OverlaySkeletonLine(980, 180 + oscillation, 1030, 260 + oscillation),
+        OverlaySkeletonLine(1030, 260 + oscillation, 1095, 320 + oscillation),
+        OverlaySkeletonLine(1030, 260 + oscillation, 980, 340 + oscillation),
+        OverlaySkeletonLine(1030, 260 + oscillation, 1115, 255 + oscillation, trusted=False),
+        OverlaySkeletonLine(1030, 260 + oscillation, 1125, 185 + oscillation, trusted=False),
     )
 
     keyboard_status = "ui smoke | hover + pinch typing path will connect here"

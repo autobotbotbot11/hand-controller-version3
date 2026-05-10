@@ -25,6 +25,15 @@ class OverlayPointer:
 
 
 @dataclass(frozen=True, slots=True)
+class OverlaySkeletonLine:
+    x1: int
+    y1: int
+    x2: int
+    y2: int
+    trusted: bool = True
+
+
+@dataclass(frozen=True, slots=True)
 class OverlayOwnershipGuide:
     visible: bool = False
     text: str = ""
@@ -46,7 +55,7 @@ class OverlayPayload:
     keyboard_keys: tuple[OverlayKeyRect, ...] = ()
     highlight_labels: frozenset[str] = frozenset()
     finger_points: tuple[OverlayPointer, ...] = ()
-    skeleton_lines: tuple[tuple[int, int, int, int], ...] = ()
+    skeleton_lines: tuple[OverlaySkeletonLine, ...] = ()
     mouse_status: str = ""
     keyboard_status: str = ""
     profile_label: str = ""
