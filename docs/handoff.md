@@ -62,6 +62,7 @@ These decisions are intentional and should not be changed casually.
 - A hand must be locked through the subtle center overlay guide before it can control mouse, keyboard, or ML commands.
 - One trusted hand is enough to start.
 - Up to two trusted hands can be locked so keyboard typing can use both hands.
+- Opening the keyboard with one trusted hand shows a short helper hint for adding the other hand.
 - The optional second-hand guide remains hidden until an untrusted hand is placed in the center lock zone while the keyboard overlay is visible.
 - Brief hand loss is reacquired near the last trusted-hand position; longer loss expires the lock.
 - If no trusted hands remain, control actions are blocked and the center guide returns.

@@ -63,6 +63,7 @@ python -m hand_controller --ui-live --tuning .\tuning.testing.json
 - on launch: ilagay ang hand sa subtle center guide, then hold still until `Hand Locked`
 - only trusted hands can move, click, type, or trigger ML commands
 - kapag keyboard is visible, puwedeng idagdag ang second trusted hand by moving it into the center guide zone
+- kapag keyboard opens with one trusted hand, a short helper hint tells the user how to add the second hand
 - if all trusted hands are lost too long, the center guide returns and control actions are blocked until a hand is locked again
 
 ### Mouse Control

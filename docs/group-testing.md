@@ -52,6 +52,7 @@ It uses:
   - rule-based clicks and keyboard pinches should not fire easily when the hand is too side-view
 - keyboard overlay show/hide
 - second-hand keyboard lock
+  - opening the keyboard with one trusted hand should briefly show a helper hint for adding the other hand
   - with keyboard visible, the second-hand guide should stay hidden until the other hand is in the center zone
   - place the other hand in the center zone until it locks
   - both trusted hands should be able to type

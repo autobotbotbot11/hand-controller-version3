@@ -16,6 +16,7 @@ This document freezes the meaning of each gesture before implementation starts.
 - Mouse, keyboard, and ML command behavior only use trusted hands.
 - Up to two trusted hands can be locked so the keyboard can still support two-hand typing.
 - One trusted hand is enough to start; a second hand can be added later while the keyboard overlay is visible.
+- When the keyboard opens with one trusted hand, a short helper hint explains that the other hand can be moved to center to add it.
 - The optional second-hand guide stays hidden until an untrusted hand is placed inside the lock zone.
 - If a trusted hand disappears briefly, the app tries to reacquire it near its last position.
 - If trusted hands are lost too long, their locks expire. When no trusted hands remain, control actions are blocked and the center guide returns.

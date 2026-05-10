@@ -35,6 +35,7 @@ INDEX_TIP_IDX = 8
 MAPPING_RESET_COOLDOWN_SECONDS = 0.4
 MAPPING_RESET_FEEDBACK = "Cursor Reset"
 CLUTCH_REPOSITION_HINT = "Thumb + pinky: reset cursor"
+SECOND_HAND_HINT = "Move other hand to center to add it"
 HELPER_HINT_SECONDS = 5.0
 
 
@@ -103,6 +104,7 @@ class LiveControlEngine:
         self._gesture_feedback_until = 0.0
         self._helper_hint_text = ""
         self._helper_hint_until = 0.0
+        self._second_hand_hint_shown = False
         self._press_safety_by_hand: dict[str, bool] = {}
         self._diag_last_ml_label: str | None = None
         self._diag_last_hold_active: bool | None = None
@@ -135,10 +137,47 @@ class LiveControlEngine:
         self._helper_hint_text = ""
         self._helper_hint_until = 0.0
 
+    def _clear_helper_hint_if_text(self, text: str) -> None:
+        if self._helper_hint_text == text:
+            self._clear_helper_hint()
+
     def _helper_hint(self, now: float) -> str:
         if now <= self._helper_hint_until:
             return self._helper_hint_text
         return ""
+
+    def _update_second_hand_hint(
+        self,
+        *,
+        keyboard_visible: bool,
+        ownership_guide_visible: bool,
+        locked_hand_count: int,
+        max_hand_count: int,
+        now: float,
+    ) -> None:
+        if not keyboard_visible or max_hand_count < 2:
+            self._second_hand_hint_shown = False
+            self._clear_helper_hint_if_text(SECOND_HAND_HINT)
+            return
+
+        if locked_hand_count >= 2:
+            self._second_hand_hint_shown = False
+            self._clear_helper_hint_if_text(SECOND_HAND_HINT)
+            return
+
+        if locked_hand_count == 0:
+            self._second_hand_hint_shown = False
+            self._clear_helper_hint_if_text(SECOND_HAND_HINT)
+            return
+
+        if ownership_guide_visible:
+            self._second_hand_hint_shown = True
+            self._clear_helper_hint_if_text(SECOND_HAND_HINT)
+            return
+
+        if not self._second_hand_hint_shown:
+            self._set_helper_hint(SECOND_HAND_HINT, now)
+            self._second_hand_hint_shown = True
 
     def _label_for_action(self, action: Action, *, click_status: str | None = None) -> str:
         if isinstance(action, Click):
@@ -371,6 +410,14 @@ class LiveControlEngine:
                     else "keyboard control off"
                 ),
             )
+
+        self._update_second_hand_hint(
+            keyboard_visible=keyboard_visible,
+            ownership_guide_visible=ownership_update.guide.visible,
+            locked_hand_count=ownership_update.locked_count,
+            max_hand_count=ownership_update.max_count,
+            now=now,
+        )
 
         active_keyboard_hover = (
             _hovered_keyboard_label(
