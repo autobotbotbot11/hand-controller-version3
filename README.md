@@ -73,7 +73,7 @@ python -m hand_controller --ui-live --tuning .\tuning.testing.json
 - left click: thumb + index pinch
 - right click: thumb + middle pinch
 - double click: two quick left-click pinches
-- drag: hold the left pinch
+- drag: hold the left pinch; brief hand-tracking dropouts during drag are buffered before dropping
 - ML `hold`: clutch/freeze; hold closed fist to freeze, reposition your hand, then release to keep the cursor in place with a temporary offset
 - reset cursor: thumb + pinky pinch; ibabalik ang cursor sa current hand position
 - ML `toggle`: on/off ng control without stopping recognition

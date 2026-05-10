@@ -79,6 +79,7 @@ class MouseClickConfig:
     double_click_interval: float = 0.60
     double_click_assist_window: float = 0.38
     left_hold_drag_seconds: float = 0.38
+    drag_lost_grace_seconds: float = 0.45
 
 
 @dataclass(slots=True, frozen=True)

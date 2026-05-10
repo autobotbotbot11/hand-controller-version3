@@ -112,6 +112,7 @@ These labels may still be predicted by the existing model, but they will not dri
 - Physical pose: thumb-index pinch held longer than the drag threshold.
 - Runtime action: start left-button hold and allow drag movement.
 - Release action: releasing the pinch ends the drag.
+- Tracking-loss note: if the hand disappears briefly while a drag is already active, the left button remains held for the configured grace window before dropping.
 - After a first left tap, holding the second thumb-index pinch past the same drag threshold starts drag instead of double-click.
 
 ### Keyboard toggle

@@ -56,6 +56,7 @@ These decisions are intentional and should not be changed casually.
 - `double_click_assist_window` limits how long the second-tap path stays eligible
 - `right click` = thumb-middle pinch down
 - `drag` = thumb-index pinch held long enough to trigger left-button hold, including second-tap hold after a first click
+- active drag uses `drag_lost_grace_seconds` to keep holding through brief hand-tracking dropouts before emitting a drop
 - Existing MLP labels `left_click` and `right_click` may still be predicted, but they must not drive behavior in the rewrite.
 
 ### Trusted hand ownership

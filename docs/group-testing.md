@@ -47,6 +47,7 @@ It uses:
 - right click
 - double click
 - drag and drop
+  - during an active drag, a very brief hand-tracking loss should not immediately drop the item
 - ML `toggle` on/off
 - ML `hold` clutch/reposition
   - with two trusted hands visible, closing one hand for hold should not make the cursor jump to the other hand

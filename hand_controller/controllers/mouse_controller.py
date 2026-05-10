@@ -21,6 +21,7 @@ class MouseMotionState:
     left_press_started: float | None = None
     left_second_tap_active: bool = False
     drag_active: bool = False
+    drag_lost_since: float | None = None
     aim_lock_x: float | None = None
     aim_lock_y: float | None = None
     mapping_offset_x: float = 0.0
@@ -83,9 +84,20 @@ class MouseController:
         if self.state.drag_active:
             actions.append(MouseUp(button="left"))
             self.state.drag_active = False
+            self.state.drag_lost_since = None
             self._cancel_left_press()
             return True
         return False
+
+    def _hold_drag_during_tracking_loss(self, now: float) -> bool:
+        if not self.state.drag_active:
+            return False
+
+        if self.state.drag_lost_since is None:
+            self.state.drag_lost_since = now
+
+        grace_seconds = max(0.0, self.click_settings.drag_lost_grace_seconds)
+        return grace_seconds > 0.0 and (now - self.state.drag_lost_since) <= grace_seconds
 
     def _screen_target(self, pointer_norm: tuple[float, float]) -> tuple[int, int]:
         x_norm = max(0.0, min(1.0, pointer_norm[0]))
@@ -242,6 +254,16 @@ class MouseController:
         actions: list[Action] = []
         status: str | None = None
 
+        if self.state.drag_active and self.state.drag_lost_since is not None:
+            if click_state.left_pressed:
+                self.state.drag_lost_since = None
+            else:
+                actions.append(MouseUp(button="left"))
+                self.state.drag_active = False
+                self.state.drag_lost_since = None
+                self._cancel_left_press()
+                return actions, "Mouse | drag release", False
+
         if (
             click_state.left_pressed
             and self.state.left_press_started is None
@@ -334,6 +356,12 @@ class MouseController:
         click_state = click_state or MouseClickGestureState()
 
         if pointer_norm is None:
+            if self._hold_drag_during_tracking_loss(now):
+                self._cancel_left_press()
+                self._clear_aim_lock()
+                self._clear_clutch_lock()
+                return actions, f"Mouse | drag holding | {self._mapping_status()}"
+
             released_drag = self._release_drag_if_needed(actions)
             self._cancel_left_press()
             self._reset_motion()
