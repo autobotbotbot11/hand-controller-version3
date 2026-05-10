@@ -33,6 +33,8 @@ from PyQt5.QtWidgets import (
 
 from ..config.settings import AppConfig, RUNTIME_APP_DIR, RUNTIME_BUNDLE_ROOT, build_factory_default_config
 from ..vision.camera import CameraSource, detect_available_cameras, probe_camera_index
+from .manual_content import MANUAL_ENTRIES
+from .manual_page import ManualPage
 from .overlay_window import OverlayWindow
 from .quick_toolbar_window import QuickToolbarWindow
 from .selfie_window import SelfieWindow
@@ -44,7 +46,7 @@ if sys.platform == "win32":
 
 WorkerFn = Callable[[OverlaySignalBus, threading.Event, AppConfig, int, int], None]
 
-PAGE_ORDER = ["GENERAL", "CAMERA", "DISPLAY", "KEYBOARD", "MOUSE"]
+PAGE_ORDER = ["GENERAL", "CAMERA", "DISPLAY", "KEYBOARD", "MOUSE", "MANUAL"]
 SELFIE_POSITIONS = [
     ("Top Left", "top_left"),
     ("Top Right", "top_right"),
@@ -573,8 +575,8 @@ class NavButton(QPushButton):
         colors = _theme_for(self)
 
         rect = QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
+        pill_rect = QRectF(rect.left() + 5, rect.top() + 1, rect.width() - 5, rect.height() - 2)
         if self._hover_amount > 0.001:
-            pill_rect = QRectF(rect.left() + 5, rect.top() + 1, rect.width() - 5, rect.height() - 2)
             pill_color = QColor(colors["nav_active_bg"])
             pill_color.setAlphaF(self._hover_amount * (1.0 if self._active else 0.55))
             painter.setPen(Qt.NoPen)
@@ -1041,6 +1043,7 @@ class MainWindow(QMainWindow):
         self._df_bg: DepthFieldBackground | None = None
 
         self.page_stack: QStackedWidget | None = None
+        self.manual_page: ManualPage | None = None
         self.nav_buttons: dict[str, QPushButton] = {}
         self.controls: dict[str, QWidget] = {}
         self.value_labels: dict[str, QLabel] = {}
@@ -1122,6 +1125,7 @@ class MainWindow(QMainWindow):
         self.page_stack.addWidget(self._page_display())
         self.page_stack.addWidget(self._page_keyboard())
         self.page_stack.addWidget(self._page_mouse())
+        self.page_stack.addWidget(self._page_manual())
         content_layout.addWidget(self.page_stack)
 
         root.addWidget(sidebar)
@@ -1176,6 +1180,8 @@ class MainWindow(QMainWindow):
         if self._df_bg is not None:
             self._df_bg.setVisible(self._resolved_theme_mode == "dark")
             self._df_bg.update()
+        if self.manual_page is not None:
+            self.manual_page.apply_theme(colors)
         for widget in self.findChildren(QWidget):
             widget.update()
 
@@ -1346,7 +1352,7 @@ class MainWindow(QMainWindow):
         self._row(layout, "Theme", theme)
 
         manual = self._outline("manual", "OPEN", width=58)
-        manual.clicked.connect(lambda: QMessageBox.information(self, "User Manual", "Placeholder pa lang ito."))
+        manual.clicked.connect(self._open_manual)
         self._row(layout, "User Manual", manual)
 
         minimize_after_launch = self._switch("minimize_after_launch")
@@ -1462,6 +1468,39 @@ class MainWindow(QMainWindow):
         self._row(layout, "Dead Zone", dead_zone, help_key="mouse_dead_zone", value_label=dead_value, slider=True)
         return self._make_page("Mouse", "Cursor movement & feel", card)
 
+    def _page_manual(self) -> QWidget:
+        page = QWidget()
+        page.setObjectName("pageShell")
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        page.setLayout(layout)
+
+        scroll = QScrollArea()
+        scroll.setObjectName("pageScroll")
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.viewport().setAutoFillBackground(False)
+
+        inner = QWidget()
+        inner.setObjectName("scrollInner")
+        inner_layout = QVBoxLayout()
+        inner_layout.setContentsMargins(0, 0, 0, 20)
+        inner_layout.setSpacing(0)
+        inner.setLayout(inner_layout)
+
+        self.manual_page = ManualPage(
+            entries=MANUAL_ENTRIES,
+            asset_dirs=(
+                RUNTIME_BUNDLE_ROOT / "assets" / "manual",
+                RUNTIME_APP_DIR / "assets" / "manual",
+            ),
+            colors=_theme_for(self),
+        )
+        inner_layout.addWidget(self.manual_page)
+        scroll.setWidget(inner)
+        layout.addWidget(scroll)
+        return page
+
     def _set_active_page(self, page: str) -> None:
         if self.page_stack is None:
             return
@@ -1473,6 +1512,9 @@ class MainWindow(QMainWindow):
                 button.set_active(active)
             else:
                 button.setChecked(active)
+
+    def _open_manual(self) -> None:
+        self._set_active_page("MANUAL")
 
     def _update_launch_button(self) -> None:
         button = self.controls["launch"]
