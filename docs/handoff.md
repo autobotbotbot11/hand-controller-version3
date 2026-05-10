@@ -61,6 +61,7 @@ These decisions are intentional and should not be changed casually.
 ### Trusted hand ownership
 - Raw MediaPipe hands are not automatically action-capable.
 - A hand must be locked through the subtle center overlay guide before it can control mouse, keyboard, or ML commands.
+- If no hand is detected and no hand is locked, the first-hand guide stays hidden except for a short no-hand grace window.
 - One trusted hand is enough to start.
 - Up to two trusted hands can be locked so keyboard typing can use both hands.
 - Opening the keyboard with one trusted hand shows a short helper hint for adding the other hand.

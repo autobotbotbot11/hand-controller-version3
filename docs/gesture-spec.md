@@ -12,6 +12,7 @@ This document freezes the meaning of each gesture before implementation starts.
 ## Trusted hand ownership
 - The app starts without an action-capable hand until a hand is locked.
 - The transparent overlay shows a subtle center guide: `Place hand here`, then `Hold still`.
+- If no hand is detected and no hand is locked, the first-hand guide stays hidden except for a short no-hand grace window to avoid flicker.
 - Holding a press-safe hand in the guide for the configured time locks it as trusted and shows `Hand Locked`.
 - Mouse, keyboard, and ML command behavior only use trusted hands.
 - Up to two trusted hands can be locked so the keyboard can still support two-hand typing.

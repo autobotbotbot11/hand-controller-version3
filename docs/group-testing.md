@@ -37,6 +37,7 @@ It uses:
 
 - app start and stop
 - trusted-hand lock
+  - with no hand in the camera, the first-hand lock guide should stay hidden
   - on launch, place hand in the subtle center guide until `Hand Locked`
   - locked hands should keep the normal cyan skeleton
   - untrusted detected hands should appear dim gray

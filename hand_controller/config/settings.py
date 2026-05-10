@@ -188,6 +188,7 @@ class HandOwnershipConfig:
     enabled: bool = True
     max_trusted_hands: int = 2
     calibration_hold_seconds: float = 0.60
+    guide_no_hand_grace_seconds: float = 0.50
     reacquire_grace_seconds: float = 1.00
     max_travel_px: float = 150.0
     pending_match_px: float = 90.0

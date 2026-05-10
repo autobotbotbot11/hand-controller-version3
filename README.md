@@ -62,6 +62,7 @@ python -m hand_controller --ui-live --tuning .\tuning.testing.json
 ### Trusted Hands
 - on launch: ilagay ang hand sa subtle center guide, then hold still until `Hand Locked`
 - only trusted hands can move, click, type, or trigger ML commands
+- first-hand lock guide stays hidden when no hand is detected, then appears when a hand enters the camera view
 - kapag keyboard is visible, puwedeng idagdag ang second trusted hand by moving it into the center guide zone
 - kapag keyboard opens with one trusted hand, a short helper hint tells the user how to add the second hand
 - trusted hands use the normal cyan skeleton; untrusted detected hands are dim gray

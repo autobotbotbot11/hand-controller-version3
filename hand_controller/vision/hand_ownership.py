@@ -60,10 +60,12 @@ class HandOwnershipTracker:
         self._slots: list[_TrustedSlot] = []
         self._pending: dict[str, _PendingCandidate] = {}
         self._next_slot_id = 1
+        self._last_hand_seen = -math.inf
 
     def reset(self) -> None:
         self._slots.clear()
         self._pending.clear()
+        self._last_hand_seen = -math.inf
 
     def _zone(self) -> tuple[float, float, float, float]:
         x1 = max(0.0, min(1.0, self.settings.zone_x1_ratio))
@@ -218,6 +220,9 @@ class HandOwnershipTracker:
                 status=f"ownership=off active={len(hands)}",
             )
 
+        if hands:
+            self._last_hand_seen = now
+
         trusted, available = self._match_existing_slots(
             hands=hands,
             frame_width=frame_width,
@@ -256,8 +261,10 @@ class HandOwnershipTracker:
 
         needs_first_hand = len(self._slots) == 0
         has_lock_candidate = bool(candidates)
+        hand_recently_seen = (now - self._last_hand_seen) <= max(0.0, self.settings.guide_no_hand_grace_seconds)
         guide_visible = len(self._slots) < max_count and (
-            needs_first_hand or (allow_additional_hands and has_lock_candidate)
+            (needs_first_hand and hand_recently_seen)
+            or (allow_additional_hands and has_lock_candidate)
         )
         progress = max(progress_by_label.values(), default=0.0)
         if has_lock_candidate:

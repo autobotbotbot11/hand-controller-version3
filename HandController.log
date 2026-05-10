@@ -653,3 +653,11 @@
 [2026-05-10 20:45:25] owner_trace trusted=Right,Left raw_selected=Left active=Left mouse_owner=Left owner=- hold_active=no hold_candidates=- preds=Right:idle/idle/1.00/1.00;Left:idle/idle/1.00/1.00 ml_status=idle mouse=Mouse | ready | mapping=offset
 [2026-05-10 20:45:25] owner_trace trusted=Right,Left raw_selected=Left active=Left mouse_owner=Left owner=- hold_active=no hold_candidates=- preds=Right:idle/idle/1.00/1.00;Left:idle/idle/1.00/1.00 ml_status=idle mouse=Mouse | mapping=offset | moving
 [2026-05-10 20:45:26] owner_trace trusted=Right,Left raw_selected=Right active=Left mouse_owner=Left owner=- hold_active=no hold_candidates=- preds=Right:idle/idle/1.00/1.00;Left:idle/idle/1.00/1.00 ml_status=idle mouse=Mouse | mapping=offset | moving
+[2026-05-10 20:47:23] ui_live=start tuning=C:\Users\acer\school\self-study\programming\projects\computer-vision-mouse-control\hand-controller-version3\tuning.testing.json camera=640x480@0 theme=Dark log=C:\Users\acer\school\self-study\programming\projects\computer-vision-mouse-control\hand-controller-version3\HandController.log
+[2026-05-10 20:47:29] ui_live=window_shown
+[2026-05-10 20:47:32] worker=start
+[2026-05-10 20:47:32] ml=loaded model=C:\Users\acer\school\self-study\programming\projects\computer-vision-mouse-control\hand-controller-version3\artifacts\validator_MLP.joblib scaler=C:\Users\acer\school\self-study\programming\projects\computer-vision-mouse-control\hand-controller-version3\artifacts\validator_scaler.joblib label_encoder=C:\Users\acer\school\self-study\programming\projects\computer-vision-mouse-control\hand-controller-version3\artifacts\validator_label_encoder.joblib
+[2026-05-10 20:47:33] ml_label_change stable=idle raw=idle p1=None margin=None status=idle
+[2026-05-10 20:47:33] hold_change hold_active=False stable=idle raw=idle
+[2026-05-10 20:47:33] control_change control_enabled=True stable=idle
+[2026-05-10 20:48:50] ui_live=exit

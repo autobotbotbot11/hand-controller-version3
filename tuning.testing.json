@@ -37,8 +37,8 @@
     "selfie_custom_y_ratio": 0.020833333333333332,
     "selfie_width_px": 160,
     "selfie_height_px": 120,
-    "quick_toolbar_edge": "top",
-    "quick_toolbar_offset_ratio": 0.382762312633833
+    "quick_toolbar_edge": "left",
+    "quick_toolbar_offset_ratio": 0.2672413793103448
   },
   "ml": {
     "confirm_frames": 2,
