@@ -84,7 +84,7 @@ class OverlayWindow(QWidget):
 
     def _draw_skeleton(self, painter: QPainter) -> None:
         trusted_pen = QPen(QColor(0, 200, 255, 180), self.settings.skeleton_stroke_px)
-        untrusted_pen = QPen(QColor(175, 175, 175, 55), max(1, self.settings.skeleton_stroke_px - 1))
+        untrusted_pen = QPen(QColor(190, 190, 190, 105), self.settings.skeleton_stroke_px)
         for line in self.payload.skeleton_lines:
             painter.setPen(trusted_pen if line.trusted else untrusted_pen)
             painter.drawLine(line.x1, line.y1, line.x2, line.y2)
