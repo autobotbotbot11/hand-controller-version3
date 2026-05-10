@@ -9,7 +9,22 @@
     "click_cooldown": 0.08,
     "double_click_interval": 0.6,
     "double_click_assist_window": 0.38,
-    "left_hold_drag_seconds": 0.38
+    "left_hold_drag_seconds": 0.38,
+    "drag_lost_grace_seconds": 0.45
+  },
+  "ownership": {
+    "enabled": true,
+    "max_trusted_hands": 2,
+    "calibration_hold_seconds": 0.6,
+    "guide_no_hand_grace_seconds": 0.5,
+    "reacquire_grace_seconds": 1.0,
+    "max_travel_px": 150.0,
+    "pending_match_px": 90.0,
+    "zone_x1_ratio": 0.34,
+    "zone_y1_ratio": 0.3,
+    "zone_x2_ratio": 0.66,
+    "zone_y2_ratio": 0.7,
+    "require_press_safe_for_lock": true
   },
   "keyboard": {
     "height_ratio": 0.36,
@@ -22,6 +37,9 @@
     "show_selfie": true,
     "selfie_width_px": 320,
     "selfie_height_px": 240,
+    "show_gesture_command": true,
+    "gesture_command_position": "top",
+    "gesture_command_hold_seconds": 0.85,
     "key_label_font_px": 14,
     "pointer_label_font_px": 10,
     "header_font_px": 14,
@@ -34,6 +52,8 @@
     "key_hover_border_px": 3,
     "status_panel_max_width_px": 880,
     "status_line_height_px": 22,
+    "quick_toolbar_edge": "right",
+    "quick_toolbar_offset_ratio": 0.5,
     "layout_rows": [
       ["ESC", "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
       ["TAB", "A", "S", "D", "F", "G", "H", "J", "K", "L"],
@@ -63,6 +83,7 @@
     "require_palm_facing_for_toggle": true
   },
   "ml": {
+    "accepted_action_labels": ["toggle", "hold", "undo"],
     "confirm_frames": 2,
     "toggle_hold_seconds": 0.45,
     "toggle_cooldown": 0.8,

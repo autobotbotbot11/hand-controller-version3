@@ -9,7 +9,22 @@
     "click_cooldown": 0.08,
     "double_click_interval": 1.5,
     "double_click_assist_window": 0.95,
-    "left_hold_drag_seconds": 0.4
+    "left_hold_drag_seconds": 0.4,
+    "drag_lost_grace_seconds": 0.45
+  },
+  "ownership": {
+    "enabled": true,
+    "max_trusted_hands": 2,
+    "calibration_hold_seconds": 0.6,
+    "guide_no_hand_grace_seconds": 0.5,
+    "reacquire_grace_seconds": 1.0,
+    "max_travel_px": 150.0,
+    "pending_match_px": 90.0,
+    "zone_x1_ratio": 0.34,
+    "zone_y1_ratio": 0.3,
+    "zone_x2_ratio": 0.66,
+    "zone_y2_ratio": 0.7,
+    "require_press_safe_for_lock": true
   },
   "keyboard": {
     "height_ratio": 0.3,
@@ -37,10 +52,14 @@
     "selfie_custom_y_ratio": 0.02306805074971165,
     "selfie_width_px": 284,
     "selfie_height_px": 213,
+    "show_gesture_command": true,
+    "gesture_command_position": "top",
+    "gesture_command_hold_seconds": 0.85,
     "quick_toolbar_edge": "left",
     "quick_toolbar_offset_ratio": 0.2672413793103448
   },
   "ml": {
+    "accepted_action_labels": ["toggle", "hold", "undo"],
     "confirm_frames": 2,
     "toggle_hold_seconds": 0.45,
     "toggle_cooldown": 0.8,
