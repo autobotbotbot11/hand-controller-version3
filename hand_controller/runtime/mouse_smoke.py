@@ -171,6 +171,8 @@ def _draw_control_smoke(
     ml_reason: str | None,
     keyboard_toggle_status: str,
     keyboard_update: KeyboardUpdate,
+    ownership_guide,
+    ownership_status: str,
     pre_hold_right_suppressed: bool,
     press_gestures_safe: bool,
     press_safety_status: str,
@@ -178,6 +180,25 @@ def _draw_control_smoke(
     import cv2
 
     height, width = frame_bgr.shape[:2]
+
+    if ownership_guide.visible:
+        x1, y1, x2, y2 = ownership_guide.zone
+        left = int(x1 * width)
+        top = int(y1 * height)
+        right = int(x2 * width)
+        bottom = int(y2 * height)
+        color = (255, 210, 80) if ownership_guide.progress > 0 else (210, 210, 210)
+        cv2.rectangle(frame_bgr, (left, top), (right, bottom), color, 2)
+        cv2.putText(
+            frame_bgr,
+            ownership_guide.text,
+            (left, max(24, top - 10)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            color,
+            2,
+            cv2.LINE_AA,
+        )
 
     for hand in vision.hands:
         is_primary = selected.primary is hand
@@ -270,6 +291,7 @@ def _draw_control_smoke(
         keyboard_update.status,
         movement_status,
         keyboard_toggle_status,
+        ownership_status,
         "press q to quit",
     ]
 
@@ -382,6 +404,8 @@ def run_mouse_smoke(config: AppConfig) -> None:
                 ml_reason=frame_result.ml_reason,
                 keyboard_toggle_status=frame_result.keyboard_toggle_status,
                 keyboard_update=frame_result.keyboard_update,
+                ownership_guide=frame_result.ownership_guide,
+                ownership_status=frame_result.ownership_status,
                 pre_hold_right_suppressed=frame_result.pre_hold_right_suppressed,
                 press_gestures_safe=frame_result.press_gestures_safe,
                 press_safety_status=frame_result.press_safety_status,

@@ -26,6 +26,7 @@ from ..ml.labels import ML_LABEL_HOLD
 from ..runtime.state import RuntimeState
 from .diagnostics import log_diagnostic
 from ..vision.hand_selector import HandSelector
+from ..vision.hand_ownership import HandOwnershipTracker, OwnershipGuide
 from ..vision.models import SelectedHands, VisionResult
 
 
@@ -73,6 +74,8 @@ class ControlFrameResult:
     press_safety_status: str
     gesture_command_text: str
     helper_hint_text: str
+    ownership_guide: OwnershipGuide
+    ownership_status: str
 
 
 class LiveControlEngine:
@@ -93,6 +96,7 @@ class LiveControlEngine:
         self.keyboard_overlay_toggle_controller = KeyboardOverlayToggleController(config.keyboard)
         self.runtime_state = RuntimeState()
         self.selector = HandSelector(config.selector)
+        self.ownership_tracker = HandOwnershipTracker(config.ownership)
         self.ml_predictor, self.ml_reason = MLPredictor.try_create(config.ml)
         self.ml_adapter = MLControlAdapter(config.ml)
         self._gesture_feedback_text = ""
@@ -265,9 +269,24 @@ class LiveControlEngine:
     ) -> ControlFrameResult:
         now = time.time() if now is None else now
 
-        selected = self.selector.select(vision.hands, vision.frame_width, vision.frame_height)
-        active_hand = selected.primary
         hand_safety_by_label = self._analyze_hand_safety(vision.hands)
+        ownership_update = self.ownership_tracker.update(
+            hands=vision.hands,
+            frame_width=vision.frame_width,
+            frame_height=vision.frame_height,
+            press_safe_by_label={
+                label: safety.press_safe for label, safety in hand_safety_by_label.items()
+            },
+            allow_additional_hands=(
+                self.runtime_state.control_enabled
+                and self.runtime_state.keyboard_visible
+                and self.config.keyboard.virtual_keyboard_enabled
+            ),
+            now=now,
+        )
+        trusted_hands = ownership_update.trusted_hands
+        selected = self.selector.select(trusted_hands, vision.frame_width, vision.frame_height)
+        active_hand = selected.primary
         active_hand_safety = hand_safety_by_label.get(active_hand.label) if active_hand is not None else None
         palm_facing = (
             active_hand_safety.ordering_ok
@@ -284,13 +303,16 @@ class LiveControlEngine:
         self.runtime_state.palm_facing = palm_facing
 
         pinch_states = self.pinch_detector.analyze(
-            hands=vision.hands,
+            hands=trusted_hands,
             frame_width=vision.frame_width,
             frame_height=vision.frame_height,
             activation_allowed_by_hand={
-                label: safety.press_safe for label, safety in hand_safety_by_label.items()
+                label: safety.press_safe and ownership_update.new_locks == 0
+                for label, safety in hand_safety_by_label.items()
             },
         )
+        if ownership_update.new_locks:
+            self._set_gesture_feedback("Hand Locked", now)
         active_pinch_state = pinch_states.get(active_hand.label) if active_hand is not None else None
 
         if self.ml_predictor is not None:
@@ -330,7 +352,7 @@ class LiveControlEngine:
         )
         if keyboard_visible:
             keyboard_update = self.keyboard_controller.update(
-                hands=vision.hands,
+                hands=trusted_hands,
                 pinch_states=pinch_states,
                 frame_width=layout_width,
                 frame_height=layout_height,
@@ -487,4 +509,6 @@ class LiveControlEngine:
             press_safety_status=press_safety_status,
             gesture_command_text=gesture_command_text,
             helper_hint_text=helper_hint_text,
+            ownership_guide=ownership_update.guide,
+            ownership_status=ownership_update.status,
         )

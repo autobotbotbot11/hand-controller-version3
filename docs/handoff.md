@@ -57,6 +57,16 @@ These decisions are intentional and should not be changed casually.
 - `drag` = thumb-index pinch held long enough to trigger left-button hold, including second-tap hold after a first click
 - Existing MLP labels `left_click` and `right_click` may still be predicted, but they must not drive behavior in the rewrite.
 
+### Trusted hand ownership
+- Raw MediaPipe hands are not automatically action-capable.
+- A hand must be locked through the subtle center overlay guide before it can control mouse, keyboard, or ML commands.
+- One trusted hand is enough to start.
+- Up to two trusted hands can be locked so keyboard typing can use both hands.
+- The second hand is added through the same center guide while the keyboard overlay is visible.
+- Brief hand loss is reacquired near the last trusted-hand position; longer loss expires the lock.
+- If no trusted hands remain, control actions are blocked and the center guide returns.
+- Reason: a person passing behind the user must not be able to steal cursor or keyboard control.
+
 ### Keyboard
 - Keyboard logic should follow the better design from `hand_controller`.
 - Keyboard visibility is toggled by a rule-based thumb-ring hold.
@@ -166,6 +176,10 @@ Completed:
   - all rule-based press-like gestures now share a hand-view safety gate to reduce side-view false positives
   - this covers left/right/double click, drag start, keyboard toggle, and keyboard typing pinches
   - movement is not fully blocked by this gate; it is only for press-like activations
+- Trusted-hand ownership:
+  - `vision/hand_ownership.py` filters raw detections into trusted hands before selection and action logic
+  - the Qt overlay shows a subtle center guide for locking the first hand and adding a second keyboard hand
+  - untrusted detected hands can still be drawn, but they cannot produce mouse, keyboard, or ML actions
 - Control toggle polish:
   - if the keyboard overlay is visible and the user turns control off with the ML `toggle`, the keyboard overlay hides visually
   - turning control back on restores the keyboard overlay if it was previously visible
@@ -211,6 +225,7 @@ Current package files:
 - `hand_controller/ml/labels.py`
 - `hand_controller/vision/camera.py`
 - `hand_controller/vision/hand_tracker.py`
+- `hand_controller/vision/hand_ownership.py`
 - `hand_controller/gestures/safety.py`
 - `hand_controller/controllers/keyboard_controller.py`
 - `hand_controller/controllers/mode_toggle.py`
@@ -258,6 +273,9 @@ Current state:
 
 Recommended next work, in order:
 1. keyboard UX validation
+   - validate trusted-hand lock on launch
+   - validate that a passer/untrusted hand cannot move, click, type, or trigger ML commands
+   - validate second-hand locking while keyboard is visible
    - test the thumb-index midpoint pointer on small keyboard sizes
    - test normal mouse movement while the keyboard overlay is visible
    - test outside-keyboard left/right click routing

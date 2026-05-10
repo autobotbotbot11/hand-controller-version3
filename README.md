@@ -13,6 +13,7 @@ Hand-tracking mouse and keyboard controller ito na gumagamit ng:
 - on-screen keyboard overlay
 - 2-page keyboard (`ABC` + `123/symbols`)
 - `Shift`, `Caps Lock`, `Backspace`, `Space`, `Enter`, `ESC`, `TAB`
+- trusted-hand lock para hindi basta makontrol ng ibang taong nadaanan ng camera
 - side-view safety para sa rule-based press gestures
 - camera source refresh, fallback, at live camera switching
 - dark mode by default
@@ -57,6 +58,12 @@ python -m hand_controller --ui-live --tuning .\tuning.testing.json
 - live hand tracking
 
 ## Main Controls
+
+### Trusted Hands
+- on launch: ilagay ang hand sa subtle center guide, then hold still until `Hand Locked`
+- only trusted hands can move, click, type, or trigger ML commands
+- kapag keyboard is visible, puwedeng idagdag ang second trusted hand through the same center guide
+- if all trusted hands are lost too long, the center guide returns and control actions are blocked until a hand is locked again
 
 ### Mouse Control
 - move: thumb-index midpoint follows the screen position directly, palm facing sa camera

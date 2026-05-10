@@ -36,6 +36,9 @@ It uses:
 ## What to test
 
 - app start and stop
+- trusted-hand lock
+  - on launch, place hand in the subtle center guide until `Hand Locked`
+  - another person's hand should not move/click/type unless it is also locked
 - mouse movement smoothness and whether the cursor lines up with the thumb-index midpoint
 - left click
 - right click
@@ -48,6 +51,9 @@ It uses:
 - side-view safety
   - rule-based clicks and keyboard pinches should not fire easily when the hand is too side-view
 - keyboard overlay show/hide
+- second-hand keyboard lock
+  - with keyboard visible, place the other hand in the center guide until it locks
+  - both trusted hands should be able to type
 - mouse movement while the keyboard overlay is visible
 - typing on the `ABC` page
 - switching to the `123/symbols` page
@@ -70,6 +76,8 @@ It uses:
 Use simple notes like this:
 
 - mouse movement / pointer alignment: good / bad
+- trusted-hand lock: good / bad
+- second-hand keyboard lock: good / bad
 - left click: good / bad
 - right click: good / bad
 - double click: good / bad

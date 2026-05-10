@@ -8,7 +8,7 @@ This rewrite keeps the code modular and intentionally separates perception, deci
 - `hand_controller/config/`
   - frozen settings and tunable defaults
 - `hand_controller/vision/`
-  - camera access, MediaPipe hand tracking, stable active-hand selection
+  - camera access, MediaPipe hand tracking, trusted-hand ownership, stable active-hand selection
 - `hand_controller/ml/`
   - model loading, label normalization, and MLP adapter
 - `hand_controller/gestures/`
@@ -60,6 +60,9 @@ Current movement model:
 ## Control Model
 - `control_enabled` is toggled by the MLP `toggle` gesture.
 - Recognition continues even when control is disabled.
+- `HandOwnershipTracker` filters raw detected hands into trusted hands before selection, pinches, keyboard actions, and ML prediction.
+- The first trusted hand is locked through a subtle center overlay guide; a second trusted hand can be added while the keyboard is visible.
+- Untrusted hands may still be visible in the overlay skeleton, but they cannot produce actions.
 - `keyboard_visible` is toggled by a rule-based thumb-ring hold.
 - The keyboard is an overlay tool; it does not replace mouse control.
 - Mouse clicks remain rule-based.
@@ -67,6 +70,7 @@ Current movement model:
 - While the keyboard is visible, hovered keys have priority; outside-keyboard thumb-index and thumb-middle pinches route through the mouse click controller.
 
 ## Global Safety Model
+- Ownership is the first action gate: if no trusted hand is active, mouse, keyboard, and ML command actions do not use raw detected hands.
 - Mouse movement and rule-based press gestures are not treated the same.
 - Movement still depends primarily on the palm-facing gate and existing mouse-state rules.
 - Press-like rule-based actions now share an extra hand-view safety layer based on hand geometry.

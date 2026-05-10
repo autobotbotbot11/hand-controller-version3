@@ -14,7 +14,7 @@ from ..ml import MLPrediction, MLPredictor
 from ..runtime.control_engine import LiveControlEngine
 from ..runtime.diagnostics import diagnostics_enabled, diagnostics_log_path, log_diagnostic
 from ..runtime.state import RuntimeState
-from ..ui.payloads import OverlayKeyRect, OverlayPayload, OverlayPointer
+from ..ui.payloads import OverlayKeyRect, OverlayOwnershipGuide, OverlayPayload, OverlayPointer
 from ..vision.camera import Camera
 from ..vision.hand_tracker import HandTracker
 from ..vision.models import SelectedHands, VisionResult
@@ -118,6 +118,25 @@ def _build_mouse_pointer_payload(
     )
 
 
+def _build_ownership_guide_payload(
+    guide,
+    screen_width: int,
+    screen_height: int,
+) -> OverlayOwnershipGuide:
+    x1, y1, x2, y2 = guide.zone
+    return OverlayOwnershipGuide(
+        visible=guide.visible,
+        text=guide.text,
+        progress=guide.progress,
+        x1=int(round(x1 * screen_width)),
+        y1=int(round(y1 * screen_height)),
+        x2=int(round(x2 * screen_width)),
+        y2=int(round(y2 * screen_height)),
+        locked_count=guide.locked_count,
+        max_count=guide.max_count,
+    )
+
+
 def _build_selfie_frame(frame_bgr, *, width: int, height: int) -> object | None:
     try:
         return cv2.resize(frame_bgr, (width, height))
@@ -140,6 +159,7 @@ def _build_debug_tags(
     pre_hold_right_suppressed: bool,
     press_gestures_safe: bool,
     press_safety_status: str,
+    ownership_status: str,
 ) -> tuple[str, ...]:
     active_label = selected.primary.label if selected.primary is not None else "-"
     ml_line = "  ".join(
@@ -163,6 +183,7 @@ def _build_debug_tags(
             f"click_idx={'down' if click_state.left_pressed else 'up'}",
             f"click_mid={'down' if click_state.right_pressed else 'up'}",
             keyboard_toggle_status,
+            ownership_status,
         ]
     )
     tags = [ml_line, mouse_line, press_safety_status]
@@ -182,6 +203,7 @@ def _build_overlay_payload(
     movement_enabled: bool,
     gesture_command_text: str,
     helper_hint_text: str,
+    ownership_guide: OverlayOwnershipGuide,
     debug_tags: tuple[str, ...],
 ) -> OverlayPayload:
     keyboard_visible = runtime_state.control_enabled and runtime_state.keyboard_visible
@@ -209,6 +231,7 @@ def _build_overlay_payload(
         selfie_frame=selfie_frame,
         gesture_command_text=gesture_command_text,
         helper_hint_text=helper_hint_text,
+        ownership_guide=ownership_guide,
         debug_tags=debug_tags,
     )
 
@@ -271,6 +294,11 @@ def run_ui_live_worker(
                     movement_enabled=frame_result.movement_enabled,
                     gesture_command_text=frame_result.gesture_command_text,
                     helper_hint_text=frame_result.helper_hint_text,
+                    ownership_guide=_build_ownership_guide_payload(
+                        frame_result.ownership_guide,
+                        screen_width,
+                        screen_height,
+                    ),
                     debug_tags=_build_debug_tags(
                         selected=frame_result.selected,
                         runtime_state=frame_result.runtime_state,
@@ -285,6 +313,7 @@ def run_ui_live_worker(
                         pre_hold_right_suppressed=frame_result.pre_hold_right_suppressed,
                         press_gestures_safe=frame_result.press_gestures_safe,
                         press_safety_status=frame_result.press_safety_status,
+                        ownership_status=frame_result.ownership_status,
                     ),
                 )
                 try:

@@ -184,6 +184,21 @@ class HandSelectorConfig:
 
 
 @dataclass(slots=True, frozen=True)
+class HandOwnershipConfig:
+    enabled: bool = True
+    max_trusted_hands: int = 2
+    calibration_hold_seconds: float = 0.60
+    reacquire_grace_seconds: float = 1.00
+    max_travel_px: float = 150.0
+    pending_match_px: float = 90.0
+    zone_x1_ratio: float = 0.34
+    zone_y1_ratio: float = 0.30
+    zone_x2_ratio: float = 0.66
+    zone_y2_ratio: float = 0.70
+    require_press_safe_for_lock: bool = True
+
+
+@dataclass(slots=True, frozen=True)
 class MLConfig:
     enabled: bool = True
     accepted_action_labels: tuple[str, ...] = ("toggle", "hold", "undo")
@@ -224,6 +239,7 @@ class AppConfig:
     camera: CameraConfig
     tracker: HandTrackerConfig
     selector: HandSelectorConfig
+    ownership: HandOwnershipConfig
     mouse_motion: MouseMotionConfig
     mouse_click: MouseClickConfig
     keyboard: KeyboardConfig
@@ -261,6 +277,7 @@ def _merge_config(base: AppConfig, overrides: dict[str, Any], tuning_path: str |
     camera = base.camera
     tracker = base.tracker
     selector = base.selector
+    ownership = base.ownership
     mouse_motion = base.mouse_motion
     mouse_click = base.mouse_click
     keyboard = base.keyboard
@@ -271,6 +288,7 @@ def _merge_config(base: AppConfig, overrides: dict[str, Any], tuning_path: str |
         "camera": camera,
         "tracker": tracker,
         "selector": selector,
+        "ownership": ownership,
         "mouse_motion": mouse_motion,
         "mouse_click": mouse_click,
         "keyboard": keyboard,
@@ -295,6 +313,7 @@ def _merge_config(base: AppConfig, overrides: dict[str, Any], tuning_path: str |
         camera=section_map["camera"],
         tracker=section_map["tracker"],
         selector=section_map["selector"],
+        ownership=section_map["ownership"],
         mouse_motion=section_map["mouse_motion"],
         mouse_click=section_map["mouse_click"],
         keyboard=section_map["keyboard"],
@@ -310,6 +329,7 @@ def build_default_config(tuning_path: str | Path | None = None) -> AppConfig:
         camera=CameraConfig(),
         tracker=HandTrackerConfig(),
         selector=HandSelectorConfig(),
+        ownership=HandOwnershipConfig(),
         mouse_motion=MouseMotionConfig(),
         mouse_click=MouseClickConfig(),
         keyboard=KeyboardConfig(),
@@ -327,6 +347,7 @@ def build_factory_default_config() -> AppConfig:
         camera=CameraConfig(),
         tracker=HandTrackerConfig(),
         selector=HandSelectorConfig(),
+        ownership=HandOwnershipConfig(),
         mouse_motion=MouseMotionConfig(),
         mouse_click=MouseClickConfig(),
         keyboard=KeyboardConfig(),
@@ -340,6 +361,7 @@ def tuning_snapshot(config: AppConfig) -> dict[str, Any]:
         "tuning_path": config.tuning_path,
         "general": asdict(config.general),
         "camera": asdict(config.camera),
+        "ownership": asdict(config.ownership),
         "mouse_click": asdict(config.mouse_click),
         "keyboard": asdict(config.keyboard),
         "mouse_motion": asdict(config.mouse_motion),

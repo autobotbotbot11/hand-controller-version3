@@ -25,6 +25,19 @@ class OverlayPointer:
 
 
 @dataclass(frozen=True, slots=True)
+class OverlayOwnershipGuide:
+    visible: bool = False
+    text: str = ""
+    progress: float = 0.0
+    x1: int = 0
+    y1: int = 0
+    x2: int = 0
+    y2: int = 0
+    locked_count: int = 0
+    max_count: int = 0
+
+
+@dataclass(frozen=True, slots=True)
 class OverlayPayload:
     mode: str = "mouse"
     control_enabled: bool = True
@@ -41,4 +54,5 @@ class OverlayPayload:
     selfie_frame: object | None = None
     gesture_command_text: str = ""
     helper_hint_text: str = ""
+    ownership_guide: OverlayOwnershipGuide = field(default_factory=OverlayOwnershipGuide)
     debug_tags: tuple[str, ...] = field(default_factory=tuple)

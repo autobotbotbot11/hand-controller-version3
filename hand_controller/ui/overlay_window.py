@@ -51,6 +51,7 @@ class OverlayWindow(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
         if self.payload.keyboard_visible:
             self._draw_keyboard(painter)
+        self._draw_ownership_guide(painter)
         if self.settings.show_skeleton:
             self._draw_skeleton(painter)
         if self.settings.show_pointers:
@@ -85,6 +86,50 @@ class OverlayWindow(QWidget):
         painter.setPen(QPen(QColor(0, 200, 255, 180), self.settings.skeleton_stroke_px))
         for x1, y1, x2, y2 in self.payload.skeleton_lines:
             painter.drawLine(x1, y1, x2, y2)
+
+    def _draw_ownership_guide(self, painter: QPainter) -> None:
+        guide = self.payload.ownership_guide
+        if not guide.visible:
+            return
+
+        x1 = max(0, min(self.width(), guide.x1))
+        y1 = max(0, min(self.height(), guide.y1))
+        x2 = max(0, min(self.width(), guide.x2))
+        y2 = max(0, min(self.height(), guide.y2))
+        left, right = min(x1, x2), max(x1, x2)
+        top, bottom = min(y1, y2), max(y1, y2)
+        rect = QRect(left, top, max(1, right - left), max(1, bottom - top))
+
+        active = guide.progress > 0.0
+        border = QColor(255, 255, 255, 120) if not active else QColor(80, 210, 255, 170)
+        painter.setBrush(QBrush(QColor(0, 0, 0, 42)))
+        painter.setPen(QPen(border, 2))
+        painter.drawRoundedRect(rect, 14, 14)
+
+        painter.setFont(QFont("Arial", max(13, self.settings.status_font_px), QFont.Normal))
+        metrics = painter.fontMetrics()
+        text = guide.text
+        text_height = metrics.height() + 10
+        text_y = top - text_height - 8
+        if text_y < 20:
+            text_y = top + 10
+        text_rect = QRect(left, text_y, rect.width(), text_height)
+        painter.setPen(QColor(255, 255, 255, 215))
+        painter.drawText(text_rect, Qt.AlignCenter, text)
+
+        progress = max(0.0, min(1.0, guide.progress))
+        if progress > 0.0:
+            bar_margin = 18
+            bar_height = 4
+            bar_x = left + bar_margin
+            bar_y = bottom - bar_margin
+            bar_w = max(1, rect.width() - bar_margin * 2)
+            painter.setPen(QPen(QColor(255, 255, 255, 45), 1))
+            painter.setBrush(QBrush(QColor(255, 255, 255, 45)))
+            painter.drawRoundedRect(QRect(bar_x, bar_y, bar_w, bar_height), 2, 2)
+            painter.setPen(QPen(QColor(80, 210, 255, 170), 1))
+            painter.setBrush(QBrush(QColor(80, 210, 255, 170)))
+            painter.drawRoundedRect(QRect(bar_x, bar_y, int(round(bar_w * progress)), bar_height), 2, 2)
 
     def _draw_line_with_midpoint_gap(
         self,
