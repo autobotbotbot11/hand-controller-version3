@@ -27,11 +27,11 @@ Kung ite-test mo lang ang current app, ito lang ang gawin:
 ```
 
 Ito ang gagamitin ng tester flow:
-- [requirements.txt](/C:/Users/acer/school/self-study/programming/projects/computer-vision-mouse-control/hand-controller-rewrite/requirements.txt)
-- [tuning.testing.json](/C:/Users/acer/school/self-study/programming/projects/computer-vision-mouse-control/hand-controller-rewrite/tuning.testing.json)
+- [requirements.txt](requirements.txt)
+- [tuning.testing.json](tuning.testing.json)
 
 Tester guide:
-- [group-testing.md](/C:/Users/acer/school/self-study/programming/projects/computer-vision-mouse-control/hand-controller-rewrite/docs/group-testing.md)
+- [group-testing.md](docs/group-testing.md)
 
 ## Manual Setup
 Python 3.11 ang gamitin.
@@ -90,11 +90,11 @@ python -m hand_controller --ui-live --tuning .\tuning.testing.json
 - `Shift` and `Caps Lock`: on-screen keys; makikita ang state nila sa overlay
 
 ## Tuning Files
-- [tuning.testing.json](/C:/Users/acer/school/self-study/programming/projects/computer-vision-mouse-control/hand-controller-rewrite/tuning.testing.json)
+- [tuning.testing.json](tuning.testing.json)
   Shared baseline para sa group testing
-- [tuning.local.json](/C:/Users/acer/school/self-study/programming/projects/computer-vision-mouse-control/hand-controller-rewrite/tuning.local.json)
+- [tuning.local.json](tuning.local.json)
   Personal local adjustments
-- [tuning.recommended.json](/C:/Users/acer/school/self-study/programming/projects/computer-vision-mouse-control/hand-controller-rewrite/tuning.recommended.json)
+- [tuning.recommended.json](tuning.recommended.json)
   Optional reference preset
 
 ## Camera Source Notes
@@ -113,9 +113,10 @@ python -m hand_controller --validate
 ```
 
 ## Project Docs
-- [group-testing.md](/C:/Users/acer/school/self-study/programming/projects/computer-vision-mouse-control/hand-controller-rewrite/docs/group-testing.md)
-- [handoff.md](/C:/Users/acer/school/self-study/programming/projects/computer-vision-mouse-control/hand-controller-rewrite/docs/handoff.md)
-- [architecture.md](/C:/Users/acer/school/self-study/programming/projects/computer-vision-mouse-control/hand-controller-rewrite/docs/architecture.md)
-- [gesture-spec.md](/C:/Users/acer/school/self-study/programming/projects/computer-vision-mouse-control/hand-controller-rewrite/docs/gesture-spec.md)
-- [packaging-portable.md](/C:/Users/acer/school/self-study/programming/projects/computer-vision-mouse-control/hand-controller-rewrite/docs/packaging-portable.md)
-- [packaging-installer.md](/C:/Users/acer/school/self-study/programming/projects/computer-vision-mouse-control/hand-controller-rewrite/docs/packaging-installer.md)
+- [group-testing.md](docs/group-testing.md)
+- [handoff.md](docs/handoff.md)
+- [architecture.md](docs/architecture.md)
+- [gesture-spec.md](docs/gesture-spec.md)
+- [packaging-portable.md](docs/packaging-portable.md)
+- [packaging-installer.md](docs/packaging-installer.md)
+- [release-checklist.md](docs/release-checklist.md)

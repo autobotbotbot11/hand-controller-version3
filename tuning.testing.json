@@ -48,10 +48,10 @@
     "mode_toggle_cooldown_seconds": 0.0,
     "require_palm_facing_for_toggle": true,
     "selfie_position": "custom",
-    "selfie_custom_x_ratio": 0.012224938875305624,
-    "selfie_custom_y_ratio": 0.02306805074971165,
-    "selfie_width_px": 284,
-    "selfie_height_px": 213,
+    "selfie_custom_x_ratio": 0.014204545454545454,
+    "selfie_custom_y_ratio": 0.028735632183908046,
+    "selfie_width_px": 512,
+    "selfie_height_px": 384,
     "show_gesture_command": true,
     "gesture_command_position": "top",
     "gesture_command_hold_seconds": 0.85,
@@ -59,7 +59,11 @@
     "quick_toolbar_offset_ratio": 0.2672413793103448
   },
   "ml": {
-    "accepted_action_labels": ["toggle", "hold", "undo"],
+    "accepted_action_labels": [
+      "toggle",
+      "hold",
+      "undo"
+    ],
     "confirm_frames": 2,
     "toggle_hold_seconds": 0.45,
     "toggle_cooldown": 0.8,

@@ -1,6 +1,6 @@
 # Portable Packaging Notes
 
-This is the current trial packaging path for turning the rewrite into a shareable Windows app.
+This is the current packaging path for turning the app into a shareable Windows app.
 
 ## Goal
 
@@ -16,8 +16,22 @@ The portable build remains the base packaging layer even now that a preview inst
 
 - tool: PyInstaller
 - output style: `onedir` / portable folder
-- build spec: [hand_controller_portable.spec](/C:/Users/acer/school/self-study/programming/projects/computer-vision-mouse-control/hand-controller-rewrite/hand_controller_portable.spec)
-- build script: [build-portable.ps1](/C:/Users/acer/school/self-study/programming/projects/computer-vision-mouse-control/hand-controller-rewrite/build-portable.ps1)
+- build spec: [hand_controller_portable.spec](../hand_controller_portable.spec)
+- build script: [build-portable.ps1](../build-portable.ps1)
+
+## Release baseline
+
+Always rebuild the portable app from the current source before sharing it.
+
+Do not reuse an old `dist\HandController` folder after source, assets, artifacts, or tuning files changed.
+
+The generated portable app starts with `tuning.testing.json` copied to:
+
+```text
+dist\HandController\tuning.local.json
+```
+
+That means `tuning.testing.json` is the default tuning that real users receive. Before making a product build, confirm that this file contains the current known-good values.
 
 ## Why this is the first release format
 
@@ -85,13 +99,16 @@ This was intentionally kept narrow so packaging does not distort the app's core 
 ## Current limitations
 
 - Windows only
-- still a trial packaging flow
+- still a preview packaging flow
 - installer path now exists separately in `docs/packaging-installer.md`
 - no final code-signing or antivirus false-positive hardening yet
 
 ## Recommended release ladder
 
-1. trial portable build
+1. fresh portable build
 2. test on the developer machine
 3. test on another Windows machine without Python
-4. only after stable: consider installer polish and release hardening
+4. build the installer only after the portable output works
+5. test the installed app from the real install location
+
+See [release-checklist.md](release-checklist.md) for the current release checklist.
